@@ -1,0 +1,6 @@
+# ダンプ
+riscv32-esp-elf-objdump.exe -d .\firmware.elf > dump.txt
+
+# スタックトレース
+# <address> は -4 した値を入力すること
+riscv32-esp-elf-addr2line.exe -fCi -e .\firmware.elf <address1> <address2> ...

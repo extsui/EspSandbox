@@ -5,7 +5,30 @@
 
 #define LOG(...) Serial.printf(__VA_ARGS__)
 
-static inline void ABORT_NO_MESSAGE() { while (1); }
+// TODO: cpp ファイルに移動すること
+void DumpBackTrace()
+{
+    constexpr int BackTraceDepthMax = 10;
+    void *fp = __builtin_frame_address(0);
+
+    LOG("Backtrace:\n");
+    for (int depth = 0; depth < BackTraceDepthMax; depth++)
+    {
+        if (fp == nullptr)
+        {
+            break;
+        }
+
+        void *pc = *((void**)fp - 1);
+        LOG("#%d %p\n", depth, pc);
+
+        uint32_t* addr = reinterpret_cast<uint32_t*>(fp);
+        addr -= 2;
+        fp = (void*)(*(uint32_t*)addr);
+    }
+}
+
+static inline void ABORT_NO_MESSAGE() { DumpBackTrace(); while (1); }
 
 #define ABORT() \
     LOG("Abort: file %s, line %d\n", __FILE__, __LINE__); \
