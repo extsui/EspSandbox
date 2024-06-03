@@ -2,6 +2,24 @@
 #include <WiFi.h>
 #include "Util.h"
 
+namespace {
+
+void HexDump(const uint8_t data[], size_t length) noexcept
+{
+    for (int i = 0; i < length; i++)
+    {
+        LOG("%02x ", data[i]);
+        // 16 個表示毎に改行、ただし先頭行と最終データが丁度 16 の倍数の場合は省略
+        if (((i + 1) % 16 == 0) && (i > 0) && ((i + 1) != length))
+        {
+            LOG("\n");
+        }
+    }
+    LOG("\n");
+}
+
+}
+
 // Global copy of slave
 #define NUMSLAVES 20
 esp_now_peer_info_t slaves[NUMSLAVES] = {};
@@ -160,20 +178,29 @@ void manageSlave()
     }
 }
 
-uint8_t data = 0;
+static uint8_t g_TestData[64];
+
 // send data
 void sendData()
 {
-    data++;
+    memset(g_TestData, 0xFF, sizeof(g_TestData));
+
+    // TORIAEZU: 適当なデータを入れてみる
+    {
+        uint32_t current = millis();
+        g_TestData[0] = (current & 0xFF000000) >> 24;
+        g_TestData[1] = (current & 0x00FF0000) >> 16;
+        g_TestData[2] = (current & 0x0000FF00) >> 8;
+        g_TestData[3] = (current & 0x000000FF) >> 0;
+    }
+
+    LOG("Sending:\n");
+    HexDump(g_TestData, sizeof(g_TestData));
+
     for (int i = 0; i < SlaveCnt; i++)
     {
         const uint8_t *peer_addr = slaves[i].peer_addr;
-        if (i == 0)
-        {
-            // print only for first slave
-            LOG("Sending: %d\n", data);
-        }
-        esp_err_t result = esp_now_send(peer_addr, &data, sizeof(data));
+        esp_err_t result = esp_now_send(peer_addr, g_TestData, sizeof(g_TestData));
         LOG("Send Status: ");
         if (result == ESP_OK)
         {

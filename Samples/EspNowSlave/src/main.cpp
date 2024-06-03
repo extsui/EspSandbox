@@ -2,6 +2,24 @@
 #include <WiFi.h>
 #include "Util.h"
 
+namespace {
+
+void HexDump(const uint8_t data[], size_t length) noexcept
+{
+    for (int i = 0; i < length; i++)
+    {
+        LOG("%02x ", data[i]);
+        // 16 個表示毎に改行、ただし先頭行と最終データが丁度 16 の倍数の場合は省略
+        if (((i + 1) % 16 == 0) && (i > 0) && ((i + 1) != length))
+        {
+            LOG("\n");
+        }
+    }
+    LOG("\n");
+}
+
+}
+
 #define CHANNEL 1
 
 void OnDataRecv(const uint8_t *mac_addr, const uint8_t *data, int data_len);
@@ -45,6 +63,11 @@ void configDeviceAP()
 void setup()
 {
     Serial.begin(115200);
+
+    // USB-CDC のせいか起動直後にログを大量に出しても PC 側に表示されない
+    // 適当なディレイを入れると安定するようになったので暫定対処
+    delay(1000);
+
     LOG("ESPNow/Basic/Slave Example\n");
     //Set device in AP mode to begin with
     WiFi.mode(WIFI_AP);
@@ -66,11 +89,8 @@ void OnDataRecv(const uint8_t *mac_addr, const uint8_t *data, int data_len)
     snprintf(macStr, sizeof(macStr), "%02x:%02x:%02x:%02x:%02x:%02x",
              mac_addr[0], mac_addr[1], mac_addr[2], mac_addr[3], mac_addr[4], mac_addr[5]);
     LOG("Last Packet Recv from: %s\n", macStr);
-    LOG("Last Packet Recv Data: ");
-    for (int i = 0; i < data_len; i++)
-    {
-        LOG("%02X ", data[i]);
-    }
+    LOG("Last Packet Recv Data: \n");
+    HexDump(data, data_len);
     LOG("\n");
 }
 
