@@ -1,5 +1,6 @@
 #include <Arduino.h>
 #include <stdint.h>
+#include "Tone.h"
 #include "Util.h"
 
 namespace Pin {
@@ -8,6 +9,8 @@ constexpr int DipSwitch0 = D2;
 constexpr int DipSwitch1 = D3;
 constexpr int DipSwitch2 = D4;
 constexpr int DipSwitch3 = D5;
+
+constexpr int Buzzer = D6;
 
 }
 
@@ -35,6 +38,19 @@ uint8_t ReadOwnAddress() noexcept
     return ((d3 << 3) | (d2 << 2) | (d1 << 1) | (d0));
 }
 
+void InitializeBuzzer() noexcept
+{
+    pinMode(Pin::Buzzer, OUTPUT);
+}
+
+// TODO: メロディスレッドに分離
+void PlayStartupMelody() noexcept
+{
+    tone(Pin::Buzzer, Note::C6, 100);
+    tone(Pin::Buzzer, Note::E6, 100);
+    tone(Pin::Buzzer, Note::G6, 100);
+}
+
 }
 
 void setup()
@@ -43,12 +59,15 @@ void setup()
 
     InitializeDipSwitch();
     g_OwnAddress = ReadOwnAddress();
-    
+
+    InitializeBuzzer();
+
     // USB-CDC のせいか起動直後にログを大量に出しても PC 側に表示されない
     // 適当なディレイを入れると安定するようになったので暫定対処
     delay(1000);
 
     LOG("OwnAddress: 0x%02x\n", g_OwnAddress);
+    PlayStartupMelody();
 }
 
 void loop()
