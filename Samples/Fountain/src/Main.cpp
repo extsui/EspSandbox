@@ -2,6 +2,7 @@
 #include <Wire.h>
 #include <stdint.h>
 #include "Building.h"
+#include "Button.h"
 #include "Tone.h"
 #include "Util.h"
 #include "Volume.h"
@@ -65,6 +66,9 @@ void PlayStartupMelody() noexcept
     tone(Pin::Buzzer, Note::E6, 100);
     tone(Pin::Buzzer, Note::G6, 100);
 }
+
+Button g_LeftButton;
+Button g_RightButton;
 
 Volume g_LeftVolume;
 Volume g_RightVolume;
@@ -211,6 +215,10 @@ void setup()
     // 適当なディレイを入れると安定するようになったので暫定対処
     delay(1000);
 
+    g_LeftButton.Initialize(Pin::LeftButton, false, false); // プルアップ抵抗が外付け
+    g_RightButton.Initialize(Pin::RightButton, false, true);
+    LOG("Button: Initialized.\n");
+
     g_LeftVolume.Initialize(Pin::LeftVolume, &g_LeftVolumeFilter, LeftVolumeLevel);
     g_RightVolume.Initialize(Pin::RightVolume, &g_RightVolumeFilter, RightVolumeLevel);
     LOG("Volume: Initialized.\n");
@@ -268,6 +276,9 @@ void loop()
     
     int currentTick = millis();
 
+    g_LeftButton.Update();
+    g_RightButton.Update();
+
     g_LeftVolume.Update();
     g_RightVolume.Update();
 
@@ -289,6 +300,12 @@ void loop()
     //LOG("Left: %d\n", g_LeftVolume.GetValue());
 
     static bool s_ReverseMode = false;
+    if (g_LeftButton.WasSingleClicked()) {
+        s_ReverseMode = !s_ReverseMode;
+        LOG("Mode Changed! (--> Reverse=%d)\n", s_ReverseMode);
+        g_LeftButton.ClearEvents();
+    }
+
     static int s_Number = 0;
     s_Number++;
     if (s_Number >= 10) {
