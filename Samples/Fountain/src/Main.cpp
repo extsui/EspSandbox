@@ -4,6 +4,7 @@
 #include "Building.h"
 #include "Tone.h"
 #include "Util.h"
+#include "Volume.h"
 
 // TODO: 後で分離
 #include <esp_now.h>
@@ -17,6 +18,12 @@ constexpr int DipSwitch2 = D4;
 constexpr int DipSwitch3 = D5;
 
 constexpr int Buzzer = D6;
+
+constexpr int LeftButton = D8;
+constexpr int RightButton = D9;
+
+constexpr int LeftVolume = A0;
+constexpr int RightVolume = A1;
 
 }
 
@@ -58,6 +65,17 @@ void PlayStartupMelody() noexcept
     tone(Pin::Buzzer, Note::E6, 100);
     tone(Pin::Buzzer, Note::G6, 100);
 }
+
+Volume g_LeftVolume;
+Volume g_RightVolume;
+
+// RC フィルタ比率 (1~99)
+constexpr int LowPassFilterRate = 80;
+RcFilter g_LeftVolumeFilter(LowPassFilterRate);
+RcFilter g_RightVolumeFilter(LowPassFilterRate);
+
+constexpr uint32_t LeftVolumeLevel = 16; // 輝度調整向け
+constexpr uint32_t RightVolumeLevel = 100;  // 範囲は適当
 
 }
 
@@ -135,7 +153,6 @@ void InitializeEspNow() noexcept
     }
 }
 
-
 void Scan(const char* pScanSsidPrefix) noexcept
 {
     int discoveredCount = WiFi.scanNetworks();
@@ -194,6 +211,10 @@ void setup()
     // 適当なディレイを入れると安定するようになったので暫定対処
     delay(1000);
 
+    g_LeftVolume.Initialize(Pin::LeftVolume, &g_LeftVolumeFilter, LeftVolumeLevel);
+    g_RightVolume.Initialize(Pin::RightVolume, &g_RightVolumeFilter, RightVolumeLevel);
+    LOG("Volume: Initialized.\n");
+
     LOG("OwnAddress: 0x%02x\n", g_OwnAddress);
 
     // TODO: 以降は後で分離
@@ -247,20 +268,27 @@ void loop()
     
     int currentTick = millis();
 
+    g_LeftVolume.Update();
+    g_RightVolume.Update();
+
     static int s_NextUpdateTick = 1000; // TORIAEZU:
-    if (currentTick + 500 < s_NextUpdateTick)
+    constexpr int UpdateIntervalBaseMilliSeconds = 50;
+    static int s_UpdateInterval = UpdateIntervalBaseMilliSeconds;
+    if (currentTick + s_UpdateInterval < s_NextUpdateTick)
     {
         return;
     }
-    s_NextUpdateTick += 500;
+    s_UpdateInterval = g_RightVolume.GetValue() + UpdateIntervalBaseMilliSeconds;
+    s_NextUpdateTick += s_UpdateInterval;
 
     // TODO: 輝度更新と数字更新の頻度は独立させるべき
 
     // 輝度更新はあまり高頻度では行わない
-    g_Building.SetBrightness(4);
+    uint32_t brightness = g_LeftVolume.GetLevel();
+    g_Building.SetBrightness(brightness);
+    //LOG("Left: %d\n", g_LeftVolume.GetValue());
 
     static bool s_ReverseMode = false;
-
     static int s_Number = 0;
     s_Number++;
     if (s_Number >= 10) {
@@ -274,6 +302,7 @@ void loop()
         g_Building.Reverse();
     }
 
+    // TODO: パケット構造を定義すべし (サンプリングナンバー, 輝度)
     // 子機にブロードキャスト送信
     uint8_t data[64] =
     {

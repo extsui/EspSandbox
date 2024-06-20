@@ -1,6 +1,9 @@
 #include "Util.h"
 #include "Volume.h"
 
+// analogRead の範囲が 0~4095 の場合に定義
+#define VOLUME_CONFIG_RANGE_4096
+
 namespace {
 
 // サンプリング周期 [ms]
@@ -117,5 +120,10 @@ void Volume::Update()
 
     // SeeeduinoXIAO の analogRead() は約 16us かかる
     uint32_t currentInput = analogRead(m_PinNumber);
+
+#ifdef VOLUME_CONFIG_RANGE_4096
+    currentInput /= 4;
+#endif
+
     m_CurrentOutput = m_pFilter->Generate(currentInput);
 }
