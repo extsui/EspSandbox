@@ -24,7 +24,8 @@ public:
     void Fill() noexcept;
     void Reverse() noexcept;
     // パターン全体指定
-    void SetPatternAll(const char* patternArray, size_t patternArraySize) noexcept;
+    void SetPatternAll(const uint8_t* patternArray, size_t patternArraySize) noexcept;
+    void GetPatternAll(uint8_t* pOutPatternArray, size_t patternArraySize) noexcept;
     // メタ数字パターン指定
     void SetMetaNumberPattern(uint8_t number) noexcept;
 

@@ -154,11 +154,18 @@ void Building::Reverse() noexcept
     }
 }
 
-void Building::SetPatternAll(const char* patternArray, size_t patternArraySize) noexcept
+void Building::SetPatternAll(const uint8_t* patternArray, size_t patternArraySize) noexcept
 {
     ASSERT(patternArray != nullptr);
-    ASSERT(patternArraySize == DigitX * DigitY);
+    ASSERT(patternArraySize >= DigitX * DigitY);
     memcpy(m_Display, patternArray, patternArraySize);
+}
+
+void Building::GetPatternAll(uint8_t* pOutPatternArray, size_t patternArraySize) noexcept
+{
+    ASSERT(pOutPatternArray != nullptr);
+    ASSERT(patternArraySize >= DigitX * DigitY);
+    memcpy(pOutPatternArray, m_Display, patternArraySize);
 }
 
 void Building::SetMetaNumberPattern(uint8_t number) noexcept

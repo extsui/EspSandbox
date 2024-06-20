@@ -22,6 +22,8 @@ constexpr int Buzzer = D6;
 
 namespace {
 
+Building g_Building;
+
 uint8_t g_OwnAddress = 0xFF;
 
 void InitializeDipSwitch() noexcept
@@ -75,10 +77,24 @@ void OnDataSendCompleteCallback(const uint8_t *pMac, esp_now_send_status_t statu
 // TORIAEZU: 子機専用
 void OnDataReceiveCallback(const uint8_t *pMac, const uint8_t *data, int length)
 {
+    constexpr char magic[4] = { '7', 'S', 'E', 'G' };
+    if (memcmp(data, magic, sizeof(magic)) != 0)
+    {
+        return;
+    }
+
+    const uint8_t* pattern = &data[4];
+
     char macStr[18];
     snprintf(macStr, sizeof(macStr), "%02x:%02x:%02x:%02x:%02x:%02x",
              pMac[0], pMac[1], pMac[2], pMac[3], pMac[4], pMac[5]);
     LOG("Last Packet Recv from: %s\n", macStr);
+
+    g_Building.SetPatternAll(pattern, 36);
+
+    // TODO: コールバック内で重い処理をしてよいのか要確認
+    g_Building.Update();
+
     LOG("Last Packet Recv Data: \n");
     HexDump(data, length);
     LOG("\n");
@@ -96,7 +112,6 @@ constexpr int EspNowChannel = 1;
 constexpr uint8_t BroadcastAddress[] = { 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF };
 
 TwoWire& g_Wire = Wire;
-Building g_Building;
 
 void InitializeByStandAloneMode() noexcept
 {
@@ -120,61 +135,6 @@ void InitializeEspNow() noexcept
     }
 }
 
-void setup()
-{
-    Serial.begin(115200);
-
-    // TODO: DIPSW で分岐
-    InitializeByStandAloneMode();
-
-    InitializeDipSwitch();
-    g_OwnAddress = ReadOwnAddress();
-
-    InitializeBuzzer();
-    PlayStartupMelody();
-
-    // USB-CDC のせいか起動直後にログを大量に出しても PC 側に表示されない
-    // 適当なディレイを入れると安定するようになったので暫定対処
-    delay(1000);
-
-    LOG("OwnAddress: 0x%02x\n", g_OwnAddress);
-
-    // TODO: 以降は後で分離
-    if (g_OwnAddress == 0)
-    {
-        WiFi.mode(WIFI_STA);
-        LOG("Master MAC: %s\n", WiFi.macAddress().c_str());
-
-        InitializeEspNow();
-
-        esp_now_register_send_cb(OnDataSendCompleteCallback);
-
-        // ブロードキャストする場合でも peer として登録しておく必要がある
-        g_AnySlave.channel = EspNowChannel;
-        g_AnySlave.encrypt = 0; // 暗号化無し
-        memcpy(g_AnySlave.peer_addr, BroadcastAddress, sizeof(esp_now_peer_info::peer_addr));
-        esp_now_add_peer(&g_AnySlave);
-    }
-    else
-    {
-        // TODO: 子機側
-        WiFi.mode(WIFI_AP);
-        LOG("Slave MAC: %s\n", WiFi.softAPmacAddress().c_str());
-
-        char ssid[64];
-        const char* password = "extsui-Fountain";
-        sprintf(ssid, "extsui-Fountain-%02x:%s", g_OwnAddress, WiFi.macAddress().c_str());
-        bool result = WiFi.softAP(ssid, password, EspNowChannel, 0);
-        if (!result)
-        {
-            LOG("AP Config failed.\n");
-        }
-        LOG("SSID: [%s]\n", ssid);
-
-        InitializeEspNow();
-        esp_now_register_recv_cb(OnDataReceiveCallback);
-    }
-}
 
 void Scan(const char* pScanSsidPrefix) noexcept
 {
@@ -217,32 +177,73 @@ void Scan(const char* pScanSsidPrefix) noexcept
     WiFi.scanDelete();
 }
 
+void setup()
+{
+    Serial.begin(115200);
+
+    // TODO: DIPSW で分岐
+    InitializeByStandAloneMode();
+
+    InitializeDipSwitch();
+    g_OwnAddress = ReadOwnAddress();
+
+    InitializeBuzzer();
+    PlayStartupMelody();
+
+    // USB-CDC のせいか起動直後にログを大量に出しても PC 側に表示されない
+    // 適当なディレイを入れると安定するようになったので暫定対処
+    delay(1000);
+
+    LOG("OwnAddress: 0x%02x\n", g_OwnAddress);
+
+    // TODO: 以降は後で分離
+    if (g_OwnAddress == 0)
+    {
+        WiFi.mode(WIFI_STA);
+        LOG("Master MAC: %s\n", WiFi.macAddress().c_str());
+
+        InitializeEspNow();
+
+        esp_now_register_send_cb(OnDataSendCompleteCallback);
+
+        // ブロードキャストする場合でも peer として登録しておく必要がある
+        g_AnySlave.channel = EspNowChannel;
+        g_AnySlave.encrypt = 0; // 暗号化無し
+        memcpy(g_AnySlave.peer_addr, BroadcastAddress, sizeof(esp_now_peer_info::peer_addr));
+        esp_now_add_peer(&g_AnySlave);
+        
+        Scan("extsui-Fountain");
+    }
+    else
+    {
+        // TODO: 子機側
+        WiFi.mode(WIFI_AP);
+        LOG("Slave MAC: %s\n", WiFi.softAPmacAddress().c_str());
+
+        char ssid[64];
+        const char* password = "extsui-Fountain";
+        sprintf(ssid, "extsui-Fountain-%02x:%s", g_OwnAddress, WiFi.macAddress().c_str());
+        bool result = WiFi.softAP(ssid, password, EspNowChannel, 0);
+        if (!result)
+        {
+            LOG("AP Config failed.\n");
+        }
+        LOG("SSID: [%s]\n", ssid);
+
+        InitializeEspNow();
+        esp_now_register_recv_cb(OnDataReceiveCallback);
+    }
+}
+
 void loop()
 {
     // TODO: DIPSW で分岐
-/*
-    // TODO: スレーブの命名規則を正式に決める
-    Scan("extsui-Fountain");
 
-    if (g_SlaveCount > 0)
+    // 子機は受信を待つだけ
+    if (g_OwnAddress != 0)
     {
-        uint8_t data[64] =
-        {
-            '7', 'S', 'E', 'G',
-        };
-
-        LOG("call esp_now_send()\n");
-        esp_now_send(BroadcastAddress, data, sizeof(data));
+        return;
     }
-
-    LOG("Hello World!\n");
-    delay(1000);
-
-    return;
-*/
-    ////////////////////////////////////////////////////////////
-    // TORIAEZU:
-    ////////////////////////////////////////////////////////////
     
     int currentTick = millis();
 
@@ -272,5 +273,14 @@ void loop()
     {
         g_Building.Reverse();
     }
+
+    // 子機にブロードキャスト送信
+    uint8_t data[64] =
+    {
+        '7', 'S', 'E', 'G',
+    };
+    g_Building.GetPatternAll(&data[4], 36);
+    esp_now_send(BroadcastAddress, data, sizeof(data));
+
     g_Building.Update();
 }
