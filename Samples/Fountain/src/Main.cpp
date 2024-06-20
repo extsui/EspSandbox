@@ -86,6 +86,20 @@ constexpr uint32_t RightVolumeLevel = 100;  // 範囲は適当
 // ESP_NOW マスタ関連
 namespace {
 
+uint8_t g_SamplingNumber = 0;
+
+struct FountainPacket
+{
+    uint8_t magic[4];       // '7', 'S', 'E', 'G'
+    uint8_t version;        // 1 固定
+    uint8_t samplingNumber; // パケット毎にインクリメント (0->1->..>255->0->..)
+    uint8_t brightness;     // 0-15
+    uint8_t _reserved1[1];
+    uint8_t pattern[36];    // 表示パターン
+    uint8_t _reserved[20];
+};
+static_assert(sizeof(FountainPacket) == 64);
+
 // TORIEAZU: 親機専用
 void OnDataSendCompleteCallback(const uint8_t *pMac, esp_now_send_status_t status)
 {
@@ -99,14 +113,16 @@ void OnDataSendCompleteCallback(const uint8_t *pMac, esp_now_send_status_t statu
 // TORIAEZU: 子機専用
 void OnDataReceiveCallback(const uint8_t *pMac, const uint8_t *data, int length)
 {
+    const FountainPacket* packet = reinterpret_cast<const FountainPacket*>(data);
+
     constexpr char magic[4] = { '7', 'S', 'E', 'G' };
-    if (memcmp(data, magic, sizeof(magic)) != 0)
+    if (memcmp(packet->magic, magic, sizeof(magic)) != 0)
     {
         return;
     }
 
-    const uint8_t* pattern = &data[4];
-
+    const uint8_t* pattern = packet->pattern;
+    
     char macStr[18];
     snprintf(macStr, sizeof(macStr), "%02x:%02x:%02x:%02x:%02x:%02x",
              pMac[0], pMac[1], pMac[2], pMac[3], pMac[4], pMac[5]);
@@ -117,7 +133,10 @@ void OnDataReceiveCallback(const uint8_t *pMac, const uint8_t *data, int length)
     // TODO: コールバック内で重い処理をしてよいのか要確認
     g_Building.Update();
 
-    LOG("Last Packet Recv Data: \n");
+    uint8_t brightness = packet->brightness;
+    g_Building.SetBrightness(brightness);
+
+    LOG("Last Packet Recv Data: (#%d)\n", packet->samplingNumber);
     HexDump(data, length);
     LOG("\n");
 }
@@ -319,14 +338,20 @@ void loop()
         g_Building.Reverse();
     }
 
-    // TODO: パケット構造を定義すべし (サンプリングナンバー, 輝度)
     // 子機にブロードキャスト送信
-    uint8_t data[64] =
-    {
-        '7', 'S', 'E', 'G',
-    };
-    g_Building.GetPatternAll(&data[4], 36);
-    esp_now_send(BroadcastAddress, data, sizeof(data));
+    FountainPacket packet;
+    memset(&packet, 0, sizeof(packet));
+    packet.magic[0] = '7';
+    packet.magic[1] = 'S';
+    packet.magic[2] = 'E';
+    packet.magic[3] = 'G';
+    packet.version = 1;
+    packet.samplingNumber = g_SamplingNumber;
+    packet.brightness = brightness;
+    g_Building.GetPatternAll(packet.pattern, sizeof(packet.pattern));
+    esp_now_send(BroadcastAddress, reinterpret_cast<uint8_t*>(&packet), sizeof(packet));
+
+    g_SamplingNumber++;
 
     g_Building.Update();
 }
