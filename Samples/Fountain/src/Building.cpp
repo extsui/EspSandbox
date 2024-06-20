@@ -6,6 +6,26 @@
 
 namespace {
 
+constexpr uint8_t NumberSegmentTable[] =
+{
+    0xFC,   // 0
+    0x60,   // 1
+    0xDA,   // 2
+    0xF2,   // 3
+    0x66,   // 4
+    0xB6,   // 5
+    0xBE,   // 6
+    0xE4,   // 7
+    0xFE,   // 8
+    0xF6,   // 9
+    0xEE,   // A
+    0x3E,   // b
+    0x1A,   // c
+    0x7A,   // d
+    0x9E,   // E
+    0x8E,   // F
+};
+
 // 第一次元：7 セグ横方向の 6 桁分
 // 第二次元：7 セグ縦方向の 6 ユニット分
 // 第三次元：メタ的な 7 セグのセグメント (a, b, ..., *)
@@ -115,19 +135,56 @@ void Building::SetBrightness(uint8_t brightness) noexcept
 
 void Building::Clear() noexcept
 {
-    ASSERT(m_pWire != nullptr);
     memset(m_Display, 0, sizeof(m_Display));
 }
 
 void Building::Fill() noexcept
 {
-    ASSERT(m_pWire != nullptr);
     memset(m_Display, 0xFF, sizeof(m_Display));
+}
+
+void Building::Reverse() noexcept
+{
+    for (int y = 0; y < DigitY; y++)
+    {
+        for (int x = 0; x < DigitX; x++)
+        {
+            m_Display[y][x] ^= 0xFF;
+        }
+    }
+}
+
+void Building::SetPatternAll(const char* patternArray, size_t patternArraySize) noexcept
+{
+    ASSERT(patternArray != nullptr);
+    ASSERT(patternArraySize == DigitX * DigitY);
+    memcpy(m_Display, patternArray, patternArraySize);
+}
+
+void Building::SetMetaNumberPattern(uint8_t number) noexcept
+{
+    // TODO: a-z 対応
+    ASSERT(0 <= number && number <= 9);
+
+    uint8_t numberPattern = NumberSegmentTable[number];
+    for (int metaSeg = 0; metaSeg < 8; metaSeg++)
+    {
+        if (numberPattern & (1 << (7 - metaSeg)))
+        {   
+            for (int y = 0; y < Building::DigitY; y++)
+            {
+                for (int x = 0; x < Building::DigitX; x++)
+                {
+                    uint8_t pattern = MetaSegmentTable[metaSeg][y][x];
+                    OrPattern(x, y, pattern);
+                }
+            }
+        }
+    }
 }
 
 void Building::SetPattern(int x, int y, uint8_t pattern) noexcept
 {
-    ASSERT(m_pWire != nullptr);
     ASSERT(0 <= x && x < DigitX);
     ASSERT(0 <= y && y < DigitY);
     m_Display[y][x] = pattern;
@@ -135,7 +192,6 @@ void Building::SetPattern(int x, int y, uint8_t pattern) noexcept
 
 void Building::OrPattern(int x, int y, uint8_t pattern) noexcept
 {
-    ASSERT(m_pWire != nullptr);
     ASSERT(0 <= x && x < DigitX);
     ASSERT(0 <= y && y < DigitY);
     m_Display[y][x] |= pattern;
@@ -143,7 +199,6 @@ void Building::OrPattern(int x, int y, uint8_t pattern) noexcept
 
 void Building::AndPattern(int x, int y, uint8_t pattern) noexcept
 {
-    ASSERT(m_pWire != nullptr);
     ASSERT(0 <= x && x < DigitX);
     ASSERT(0 <= y && y < DigitY);
     m_Display[y][x] &= ~pattern;
@@ -244,23 +299,3 @@ void Building::CreateDisplayData(uint8_t* pDisplay, uint8_t digit, uint8_t patte
         pDisplay[15] |= ((pattern & (1 << 0)) != 0) ? (1 << (digit - 8)) : 0; // *
     }
 }
-
-constexpr uint8_t NumberSegmentTable[] =
-{
-    0xFC,   // 0
-    0x60,   // 1
-    0xDA,   // 2
-    0xF2,   // 3
-    0x66,   // 4
-    0xB6,   // 5
-    0xBE,   // 6
-    0xE4,   // 7
-    0xFE,   // 8
-    0xF6,   // 9
-    0xEE,   // A
-    0x3E,   // b
-    0x1A,   // c
-    0x7A,   // d
-    0x9E,   // E
-    0x8E,   // F
-};

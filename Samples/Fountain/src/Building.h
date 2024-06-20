@@ -18,11 +18,21 @@ public:
 public:
     void Initialize(TwoWire* pWire) noexcept;
     void SetBrightness(uint8_t brightness) noexcept;
+    
+    // == 一括制御 ==
     void Clear() noexcept;
     void Fill() noexcept;
+    void Reverse() noexcept;
+    // パターン全体指定
+    void SetPatternAll(const char* patternArray, size_t patternArraySize) noexcept;
+    // メタ数字パターン指定
+    void SetMetaNumberPattern(uint8_t number) noexcept;
+
+    // == プリミティブ ==
     void SetPattern(int x, int y, uint8_t pattern) noexcept;
     void OrPattern(int x, int y, uint8_t pattern) noexcept;
     void AndPattern(int x, int y, uint8_t pattern) noexcept;
+    
     void Update() noexcept;
 
 private:
