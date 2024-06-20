@@ -30,4 +30,6 @@ static inline void ABORT_NO_MESSAGE() noexcept
 // 非常に見辛くなるのでマクロで代用する
 #define UNUSED(var) ((void)var)
 
+void HexDump(const uint8_t data[], size_t length) noexcept;
+
 #endif /* UTIL_H */

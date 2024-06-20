@@ -62,6 +62,7 @@ void PlayStartupMelody() noexcept
 // ESP_NOW マスタ関連
 namespace {
 
+// TORIEAZU: 親機専用
 void OnDataSendCompleteCallback(const uint8_t *pMac, esp_now_send_status_t status)
 {
     char macStr[18];
@@ -69,6 +70,18 @@ void OnDataSendCompleteCallback(const uint8_t *pMac, esp_now_send_status_t statu
              pMac[0], pMac[1], pMac[2], pMac[3], pMac[4], pMac[5]);
     LOG("Last Packet Sent to: %s\n", macStr);
     LOG("Last Packet Send Status: %s\n", (status == ESP_NOW_SEND_SUCCESS ? "Delivery Success" : "Delivery Fail"));
+}
+
+// TORIAEZU: 子機専用
+void OnDataReceiveCallback(const uint8_t *pMac, const uint8_t *data, int length)
+{
+    char macStr[18];
+    snprintf(macStr, sizeof(macStr), "%02x:%02x:%02x:%02x:%02x:%02x",
+             pMac[0], pMac[1], pMac[2], pMac[3], pMac[4], pMac[5]);
+    LOG("Last Packet Recv from: %s\n", macStr);
+    LOG("Last Packet Recv Data: \n");
+    HexDump(data, length);
+    LOG("\n");
 }
 
 }
@@ -91,6 +104,20 @@ void InitializeByStandAloneMode() noexcept
     g_Building.Initialize(&g_Wire);
     g_Building.Clear();
     g_Building.Update();
+}
+
+void InitializeEspNow() noexcept
+{
+    WiFi.disconnect();
+    if (esp_now_init() == ESP_OK)
+    {
+        LOG("ESP_NOW Initialize Success\n");
+    }
+    else
+    {
+        LOG("ESP_NOW Initialize Failed\n");
+        ESP.restart();
+    }
 }
 
 void setup()
@@ -118,16 +145,7 @@ void setup()
         WiFi.mode(WIFI_STA);
         LOG("Master MAC: %s\n", WiFi.macAddress().c_str());
 
-        WiFi.disconnect();
-        if (esp_now_init() == ESP_OK)
-        {
-            LOG("ESP_NOW Initialize Success\n");
-        }
-        else
-        {
-            LOG("ESP_NOW Initialize Failed\n");
-            ESP.restart();
-        }
+        InitializeEspNow();
 
         esp_now_register_send_cb(OnDataSendCompleteCallback);
 
@@ -140,6 +158,21 @@ void setup()
     else
     {
         // TODO: 子機側
+        WiFi.mode(WIFI_AP);
+        LOG("Slave MAC: %s\n", WiFi.softAPmacAddress().c_str());
+
+        char ssid[64];
+        const char* password = "extsui-Fountain";
+        sprintf(ssid, "extsui-Fountain-%02x:%s", g_OwnAddress, WiFi.macAddress().c_str());
+        bool result = WiFi.softAP(ssid, password, EspNowChannel, 0);
+        if (!result)
+        {
+            LOG("AP Config failed.\n");
+        }
+        LOG("SSID: [%s]\n", ssid);
+
+        InitializeEspNow();
+        esp_now_register_recv_cb(OnDataReceiveCallback);
     }
 }
 
@@ -293,9 +326,8 @@ void loop()
 {
     // TODO: DIPSW で分岐
 
-    /*
     // TODO: スレーブの命名規則を正式に決める
-    Scan("Slave");
+    Scan("extsui-Fountain");
 
     if (g_SlaveCount > 0)
     {
@@ -310,7 +342,8 @@ void loop()
 
     LOG("Hello World!\n");
     delay(1000);
-    */
+
+    return;
 
     ////////////////////////////////////////////////////////////
     // TORIAEZU:
