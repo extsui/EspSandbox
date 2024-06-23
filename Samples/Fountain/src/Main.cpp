@@ -9,6 +9,7 @@
 
 // TODO: 後で分離
 #include <esp_now.h>
+#include <esp_wifi.h>
 #include <WiFi.h>
 
 namespace Pin {
@@ -148,6 +149,7 @@ esp_now_peer_info_t g_Slaves[EspNowSlaveMax] = {};
 esp_now_peer_info_t g_AnySlave = {};
 int g_SlaveCount = 0;
 
+// TODO: チャネルを動的に変更可能にする
 constexpr int EspNowChannel = 1;
 
 constexpr uint8_t BroadcastAddress[] = { 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF };
@@ -250,6 +252,9 @@ void setup()
         WiFi.mode(WIFI_STA);
         LOG("Master MAC: %s\n", WiFi.macAddress().c_str());
 
+        esp_wifi_set_channel(EspNowChannel, WIFI_SECOND_CHAN_NONE);
+        LOG("Wifi channel: %d\n", EspNowChannel);
+
         InitializeEspNow();
 
         esp_now_register_send_cb(OnDataSendCompleteCallback);
@@ -277,6 +282,7 @@ void setup()
             LOG("AP Config failed.\n");
         }
         LOG("SSID: [%s]\n", ssid);
+        LOG("Wifi channel: %d\n", EspNowChannel);
 
         InitializeEspNow();
         esp_now_register_recv_cb(OnDataReceiveCallback);
