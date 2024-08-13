@@ -8783,7 +8783,7 @@
 				)
 			)
 		)
-		(property "Footprint" ""
+		(property "Footprint" "Resistor_THT:R_Axial_DIN0207_L6.3mm_D2.5mm_P7.62mm_Horizontal"
 			(at 262.89 91.44 0)
 			(effects
 				(font
@@ -8850,7 +8850,7 @@
 				)
 			)
 		)
-		(property "Footprint" ""
+		(property "Footprint" "Resistor_THT:R_Axial_DIN0207_L6.3mm_D2.5mm_P7.62mm_Horizontal"
 			(at 59.69 54.61 0)
 			(effects
 				(font
@@ -8918,7 +8918,7 @@
 				)
 			)
 		)
-		(property "Footprint" ""
+		(property "Footprint" "Button_Switch_THT:SW_Slide_SPDT_Straight_CK_OS102011MS2Q"
 			(at 215.9 48.26 0)
 			(effects
 				(font
@@ -8990,7 +8990,7 @@
 				(justify right)
 			)
 		)
-		(property "Footprint" ""
+		(property "Footprint" "LED_THT:LED_D3.0mm"
 			(at 226.06 59.69 90)
 			(effects
 				(font
@@ -9217,7 +9217,7 @@
 				)
 			)
 		)
-		(property "Footprint" ""
+		(property "Footprint" "Resistor_THT:R_Axial_DIN0207_L6.3mm_D2.5mm_P7.62mm_Horizontal"
 			(at 41.91 147.32 0)
 			(effects
 				(font
@@ -9284,7 +9284,7 @@
 				)
 			)
 		)
-		(property "Footprint" ""
+		(property "Footprint" "Resistor_THT:R_Axial_DIN0207_L6.3mm_D2.5mm_P7.62mm_Horizontal"
 			(at 48.26 144.78 0)
 			(effects
 				(font
@@ -9351,7 +9351,7 @@
 				)
 			)
 		)
-		(property "Footprint" ""
+		(property "Footprint" "Resistor_THT:R_Axial_DIN0207_L6.3mm_D2.5mm_P7.62mm_Horizontal"
 			(at 113.03 72.39 0)
 			(effects
 				(font
@@ -9418,7 +9418,7 @@
 				)
 			)
 		)
-		(property "Footprint" ""
+		(property "Footprint" "Resistor_THT:R_Axial_DIN0207_L6.3mm_D2.5mm_P2.54mm_Vertical"
 			(at 49.53 172.72 0)
 			(effects
 				(font
@@ -9639,7 +9639,7 @@
 				(justify right)
 			)
 		)
-		(property "Footprint" ""
+		(property "Footprint" "Button_Switch_THT:SW_PUSH_6mm_H7.3mm"
 			(at 245.11 124.46 0)
 			(effects
 				(font
@@ -9850,7 +9850,7 @@
 				)
 			)
 		)
-		(property "Footprint" ""
+		(property "Footprint" "Resistor_THT:R_Axial_DIN0207_L6.3mm_D2.5mm_P7.62mm_Horizontal"
 			(at 93.98 55.88 0)
 			(effects
 				(font
@@ -9984,7 +9984,7 @@
 				(hide yes)
 			)
 		)
-		(property "Footprint" ""
+		(property "Footprint" "Diode_THT:D_DO-35_SOD27_P5.08mm_Vertical_AnodeUp"
 			(at 250.19 153.67 90)
 			(effects
 				(font
@@ -10280,7 +10280,7 @@
 				)
 			)
 		)
-		(property "Footprint" ""
+		(property "Footprint" "Resistor_THT:R_Axial_DIN0207_L6.3mm_D2.5mm_P7.62mm_Horizontal"
 			(at 232.41 109.22 0)
 			(effects
 				(font
@@ -10349,7 +10349,7 @@
 				(justify left)
 			)
 		)
-		(property "Footprint" ""
+		(property "Footprint" "extsui:OLED_128x64_0.96inch"
 			(at 176.53 128.27 0)
 			(effects
 				(font
@@ -10423,7 +10423,7 @@
 				(hide yes)
 			)
 		)
-		(property "Footprint" ""
+		(property "Footprint" "Diode_THT:D_DO-35_SOD27_P5.08mm_Vertical_AnodeUp"
 			(at 250.19 110.49 90)
 			(effects
 				(font
@@ -10509,7 +10509,7 @@
 				(hide yes)
 			)
 		)
-		(property "Footprint" ""
+		(property "Footprint" "Diode_THT:D_DO-35_SOD27_P5.08mm_Vertical_AnodeUp"
 			(at 250.19 132.08 90)
 			(effects
 				(font
@@ -10690,7 +10690,7 @@
 				(justify right)
 			)
 		)
-		(property "Footprint" ""
+		(property "Footprint" "Button_Switch_THT:SW_PUSH_6mm_H7.3mm"
 			(at 227.33 118.11 0)
 			(effects
 				(font
@@ -10757,7 +10757,7 @@
 				)
 			)
 		)
-		(property "Footprint" ""
+		(property "Footprint" "Resistor_THT:R_Axial_DIN0207_L6.3mm_D2.5mm_P7.62mm_Horizontal"
 			(at 245.11 91.44 0)
 			(effects
 				(font
@@ -11026,7 +11026,7 @@
 				(justify right)
 			)
 		)
-		(property "Footprint" ""
+		(property "Footprint" "Button_Switch_THT:SW_PUSH_6mm_H7.3mm"
 			(at 245.11 146.05 0)
 			(effects
 				(font
@@ -11159,7 +11159,7 @@
 				)
 			)
 		)
-		(property "Footprint" ""
+		(property "Footprint" "Resistor_THT:R_Axial_DIN0207_L6.3mm_D2.5mm_P7.62mm_Horizontal"
 			(at 41.91 132.08 0)
 			(effects
 				(font
@@ -11226,7 +11226,7 @@
 				)
 			)
 		)
-		(property "Footprint" ""
+		(property "Footprint" "Resistor_THT:R_Axial_DIN0207_L6.3mm_D2.5mm_P7.62mm_Horizontal"
 			(at 48.26 139.7 0)
 			(effects
 				(font
@@ -11294,7 +11294,7 @@
 				(hide yes)
 			)
 		)
-		(property "Footprint" ""
+		(property "Footprint" "Diode_THT:D_DO-35_SOD27_P5.08mm_Vertical_AnodeUp"
 			(at 267.97 132.08 90)
 			(effects
 				(font
@@ -11649,7 +11649,7 @@
 				(justify right)
 			)
 		)
-		(property "Footprint" ""
+		(property "Footprint" "Button_Switch_THT:SW_PUSH_6mm_H7.3mm"
 			(at 262.89 102.87 0)
 			(effects
 				(font
@@ -12056,7 +12056,7 @@
 				)
 			)
 		)
-		(property "Footprint" ""
+		(property "Footprint" "Button_Switch_THT:SW_PUSH_6mm_H7.3mm"
 			(at 101.6 31.75 0)
 			(effects
 				(font
@@ -12123,7 +12123,7 @@
 				)
 			)
 		)
-		(property "Footprint" ""
+		(property "Footprint" "Resistor_THT:R_Axial_DIN0207_L6.3mm_D2.5mm_P7.62mm_Horizontal"
 			(at 232.41 152.4 0)
 			(effects
 				(font
@@ -12190,7 +12190,7 @@
 				)
 			)
 		)
-		(property "Footprint" ""
+		(property "Footprint" "Resistor_THT:R_Axial_DIN0207_L6.3mm_D2.5mm_P7.62mm_Horizontal"
 			(at 41.91 142.24 0)
 			(effects
 				(font
@@ -12322,7 +12322,7 @@
 				)
 			)
 		)
-		(property "Footprint" ""
+		(property "Footprint" "Diode_THT:D_DO-35_SOD27_P5.08mm_Vertical_AnodeUp"
 			(at 243.84 39.37 90)
 			(effects
 				(font
@@ -12473,7 +12473,7 @@
 				(hide yes)
 			)
 		)
-		(property "Footprint" ""
+		(property "Footprint" "Diode_THT:D_DO-35_SOD27_P5.08mm_Vertical_AnodeUp"
 			(at 267.97 110.49 90)
 			(effects
 				(font
@@ -12558,7 +12558,7 @@
 				)
 			)
 		)
-		(property "Footprint" ""
+		(property "Footprint" "Resistor_THT:R_Axial_DIN0207_L6.3mm_D2.5mm_P7.62mm_Horizontal"
 			(at 48.26 134.62 0)
 			(effects
 				(font
@@ -12625,7 +12625,7 @@
 				)
 			)
 		)
-		(property "Footprint" ""
+		(property "Footprint" "Resistor_THT:R_Axial_DIN0207_L6.3mm_D2.5mm_P2.54mm_Vertical"
 			(at 41.91 170.18 0)
 			(effects
 				(font
@@ -12692,7 +12692,7 @@
 				)
 			)
 		)
-		(property "Footprint" ""
+		(property "Footprint" "Resistor_THT:R_Axial_DIN0207_L6.3mm_D2.5mm_P7.62mm_Horizontal"
 			(at 91.44 55.88 0)
 			(effects
 				(font
@@ -12890,7 +12890,7 @@
 				)
 			)
 		)
-		(property "Footprint" ""
+		(property "Footprint" "Resistor_THT:R_Axial_DIN0207_L6.3mm_D2.5mm_P7.62mm_Horizontal"
 			(at 41.91 137.16 0)
 			(effects
 				(font
@@ -13035,7 +13035,7 @@
 				(justify right)
 			)
 		)
-		(property "Footprint" ""
+		(property "Footprint" "Button_Switch_THT:SW_PUSH_6mm_H7.3mm"
 			(at 262.89 146.05 0)
 			(effects
 				(font
@@ -13102,7 +13102,7 @@
 				)
 			)
 		)
-		(property "Footprint" ""
+		(property "Footprint" "Resistor_THT:R_Axial_DIN0207_L6.3mm_D2.5mm_P2.54mm_Vertical"
 			(at 226.06 53.34 0)
 			(effects
 				(font
@@ -13460,7 +13460,7 @@
 				)
 			)
 		)
-		(property "Footprint" ""
+		(property "Footprint" "Resistor_THT:R_Axial_DIN0207_L6.3mm_D2.5mm_P2.54mm_Vertical"
 			(at 41.91 175.26 0)
 			(effects
 				(font
@@ -13530,7 +13530,7 @@
 				(justify right)
 			)
 		)
-		(property "Footprint" ""
+		(property "Footprint" "Button_Switch_THT:SW_PUSH_6mm_H7.3mm"
 			(at 245.11 102.87 0)
 			(effects
 				(font
@@ -13664,7 +13664,7 @@
 				)
 			)
 		)
-		(property "Footprint" ""
+		(property "Footprint" "Connector_USB:USB_C_Receptacle_XKB_U262-16XN-4BVC11"
 			(at 39.37 62.23 0)
 			(effects
 				(font
@@ -13776,7 +13776,7 @@
 				)
 			)
 		)
-		(property "Footprint" ""
+		(property "Footprint" "Resistor_THT:R_Axial_DIN0207_L6.3mm_D2.5mm_P2.54mm_Vertical"
 			(at 49.53 177.8 0)
 			(effects
 				(font
@@ -13844,7 +13844,7 @@
 				(hide yes)
 			)
 		)
-		(property "Footprint" ""
+		(property "Footprint" "Diode_THT:D_DO-35_SOD27_P5.08mm_Vertical_AnodeUp"
 			(at 267.97 153.67 90)
 			(effects
 				(font
@@ -13996,7 +13996,7 @@
 				)
 			)
 		)
-		(property "Footprint" ""
+		(property "Footprint" "Resistor_THT:R_Axial_DIN0207_L6.3mm_D2.5mm_P7.62mm_Horizontal"
 			(at 110.49 33.02 0)
 			(effects
 				(font
@@ -14332,7 +14332,7 @@
 				(justify right)
 			)
 		)
-		(property "Footprint" ""
+		(property "Footprint" "Button_Switch_THT:SW_PUSH_6mm_H7.3mm"
 			(at 262.89 124.46 0)
 			(effects
 				(font
@@ -14399,7 +14399,7 @@
 				)
 			)
 		)
-		(property "Footprint" ""
+		(property "Footprint" "Resistor_THT:R_Axial_DIN0207_L6.3mm_D2.5mm_P7.62mm_Horizontal"
 			(at 59.69 52.07 0)
 			(effects
 				(font
@@ -14466,7 +14466,7 @@
 				)
 			)
 		)
-		(property "Footprint" ""
+		(property "Footprint" "Resistor_THT:R_Axial_DIN0207_L6.3mm_D2.5mm_P7.62mm_Horizontal"
 			(at 48.26 149.86 0)
 			(effects
 				(font
