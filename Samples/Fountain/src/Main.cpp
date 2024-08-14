@@ -87,28 +87,66 @@ constexpr uint32_t RightVolumeLevel = 100;  // 範囲は適当
 // ESP_NOW マスタ関連
 namespace {
 
-uint8_t g_SamplingNumber = 0;
-
 struct FountainPacket
 {
     uint8_t magic[4];       // '7', 'S', 'E', 'G'
     uint8_t version;        // 1 固定
     uint8_t samplingNumber; // パケット毎にインクリメント (0->1->..>255->0->..)
     uint8_t brightness;     // 0-15
-    uint8_t _reserved1[1];
+    uint8_t retryCount;     // 信頼性向上のための再送カウンタ (再送時はサンプリングナンバーは同じ)
     uint8_t pattern[36];    // 表示パターン
     uint8_t _reserved[20];
 };
 static_assert(sizeof(FountainPacket) == 64);
 
+uint8_t g_SamplingNumber = 0;
+
+// 毎回パケットを何回再送するか
+// (1 の場合は再送 1 回で計 2 回送信される)
+constexpr int RetryCountMax = 1;
+uint8_t g_RetryCount = 0;
+
+// 直近で送信したパケット
+FountainPacket g_CurrentPacket;
+
+constexpr int EspNowSlaveMax = 15;
+esp_now_peer_info_t g_Slaves[EspNowSlaveMax] = {};
+esp_now_peer_info_t g_AnySlave = {};
+int g_SlaveCount = 0;
+
+// TODO: チャネルを動的に変更可能にする
+constexpr int EspNowChannel = 13; // 6; <--6も同様 //13; <--13は送信側がエラーになった //1;
+
+constexpr uint8_t BroadcastAddress[] = { 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF };
+
 // TORIEAZU: 親機専用
 void OnDataSendCompleteCallback(const uint8_t *pMac, esp_now_send_status_t status)
 {
+    /*
     char macStr[18];
     snprintf(macStr, sizeof(macStr), "%02x:%02x:%02x:%02x:%02x:%02x",
              pMac[0], pMac[1], pMac[2], pMac[3], pMac[4], pMac[5]);
     LOG("Last Packet Sent to: %s\n", macStr);
     LOG("Last Packet Send Status: %s\n", (status == ESP_NOW_SEND_SUCCESS ? "Delivery Success" : "Delivery Fail"));
+    */
+
+    if (status != ESP_NOW_SEND_SUCCESS)
+    {
+        LOG("Send failed!\n");
+        return;
+    }
+
+    LOG("Send: #%d, %d\n", g_CurrentPacket.samplingNumber, g_CurrentPacket.retryCount);
+
+    if (g_RetryCount < RetryCountMax)
+    {
+        // 再送時はサンプリングナンバーは同じ
+        ASSERT(g_CurrentPacket.samplingNumber == static_cast<uint8_t>(g_SamplingNumber - 1));
+
+        g_CurrentPacket.retryCount++;
+        esp_now_send(BroadcastAddress, reinterpret_cast<uint8_t*>(&g_CurrentPacket), sizeof(g_CurrentPacket));
+        g_RetryCount++;
+    }
 }
 
 // TORIAEZU: 子機専用
@@ -127,7 +165,7 @@ void OnDataReceiveCallback(const uint8_t *pMac, const uint8_t *data, int length)
     char macStr[18];
     snprintf(macStr, sizeof(macStr), "%02x:%02x:%02x:%02x:%02x:%02x",
              pMac[0], pMac[1], pMac[2], pMac[3], pMac[4], pMac[5]);
-    LOG("Last Packet Recv from: %s\n", macStr);
+    //LOG("Last Packet Recv from: %s\n", macStr);
 
     g_Building.SetPatternAll(pattern, 36);
 
@@ -137,22 +175,12 @@ void OnDataReceiveCallback(const uint8_t *pMac, const uint8_t *data, int length)
     uint8_t brightness = packet->brightness;
     g_Building.SetBrightness(brightness);
 
-    LOG("Last Packet Recv Data: (#%d)\n", packet->samplingNumber);
-    HexDump(data, length);
-    LOG("\n");
+    LOG("Last Packet Recv Data: (#%d, %d)\n", packet->samplingNumber, packet->retryCount);
+    //HexDump(data, length);
+    //LOG("\n");
 }
 
 }
-
-constexpr int EspNowSlaveMax = 15;
-esp_now_peer_info_t g_Slaves[EspNowSlaveMax] = {};
-esp_now_peer_info_t g_AnySlave = {};
-int g_SlaveCount = 0;
-
-// TODO: チャネルを動的に変更可能にする
-constexpr int EspNowChannel = 1;
-
-constexpr uint8_t BroadcastAddress[] = { 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF };
 
 TwoWire& g_Wire = Wire;
 
@@ -354,10 +382,13 @@ void loop()
     packet.version = 1;
     packet.samplingNumber = g_SamplingNumber;
     packet.brightness = brightness;
+    packet.retryCount = 0;
     g_Building.GetPatternAll(packet.pattern, sizeof(packet.pattern));
+    g_CurrentPacket = packet;
     esp_now_send(BroadcastAddress, reinterpret_cast<uint8_t*>(&packet), sizeof(packet));
 
     g_SamplingNumber++;
+    g_RetryCount = 0;
 
     g_Building.Update();
 }

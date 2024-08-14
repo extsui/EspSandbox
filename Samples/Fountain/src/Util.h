@@ -3,7 +3,15 @@
 
 #include <Arduino.h>
 
+//#define DETAIL_LOG_ENABLE
+
 #define LOG(...) Serial.printf(__VA_ARGS__)
+
+#ifdef DETAIL_LOG_ENABLE
+    #define DETAIL_LOG(...) LOG(__VA_ARGS__)
+#else
+    #define DETAIL_LOG(...)
+#endif
 
 void DumpBackTrace() noexcept;
 
