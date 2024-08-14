@@ -8531,6 +8531,7 @@
 	(symbol
 		(lib_id "Device:R_Potentiometer_Small")
 		(at 93.98 81.28 0)
+		(mirror x)
 		(unit 1)
 		(exclude_from_sim no)
 		(in_bom yes)
@@ -8554,7 +8555,7 @@
 				)
 			)
 		)
-		(property "Footprint" ""
+		(property "Footprint" "extsui:TSR_3386T"
 			(at 93.98 81.28 0)
 			(effects
 				(font
