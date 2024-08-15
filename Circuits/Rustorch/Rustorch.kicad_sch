@@ -941,6 +941,232 @@
 				)
 			)
 		)
+		(symbol "Connector_Generic:Conn_01x05"
+			(pin_names
+				(offset 1.016) hide)
+			(exclude_from_sim no)
+			(in_bom yes)
+			(on_board yes)
+			(property "Reference" "J"
+				(at 0 7.62 0)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+				)
+			)
+			(property "Value" "Conn_01x05"
+				(at 0 -7.62 0)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+				)
+			)
+			(property "Footprint" ""
+				(at 0 0 0)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+					(hide yes)
+				)
+			)
+			(property "Datasheet" "~"
+				(at 0 0 0)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+					(hide yes)
+				)
+			)
+			(property "Description" "Generic connector, single row, 01x05, script generated (kicad-library-utils/schlib/autogen/connector/)"
+				(at 0 0 0)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+					(hide yes)
+				)
+			)
+			(property "ki_keywords" "connector"
+				(at 0 0 0)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+					(hide yes)
+				)
+			)
+			(property "ki_fp_filters" "Connector*:*_1x??_*"
+				(at 0 0 0)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+					(hide yes)
+				)
+			)
+			(symbol "Conn_01x05_1_1"
+				(rectangle
+					(start -1.27 -4.953)
+					(end 0 -5.207)
+					(stroke
+						(width 0.1524)
+						(type default)
+					)
+					(fill
+						(type none)
+					)
+				)
+				(rectangle
+					(start -1.27 -2.413)
+					(end 0 -2.667)
+					(stroke
+						(width 0.1524)
+						(type default)
+					)
+					(fill
+						(type none)
+					)
+				)
+				(rectangle
+					(start -1.27 0.127)
+					(end 0 -0.127)
+					(stroke
+						(width 0.1524)
+						(type default)
+					)
+					(fill
+						(type none)
+					)
+				)
+				(rectangle
+					(start -1.27 2.667)
+					(end 0 2.413)
+					(stroke
+						(width 0.1524)
+						(type default)
+					)
+					(fill
+						(type none)
+					)
+				)
+				(rectangle
+					(start -1.27 5.207)
+					(end 0 4.953)
+					(stroke
+						(width 0.1524)
+						(type default)
+					)
+					(fill
+						(type none)
+					)
+				)
+				(rectangle
+					(start -1.27 6.35)
+					(end 1.27 -6.35)
+					(stroke
+						(width 0.254)
+						(type default)
+					)
+					(fill
+						(type background)
+					)
+				)
+				(pin passive line
+					(at -5.08 5.08 0)
+					(length 3.81)
+					(name "Pin_1"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "1"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin passive line
+					(at -5.08 2.54 0)
+					(length 3.81)
+					(name "Pin_2"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "2"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin passive line
+					(at -5.08 0 0)
+					(length 3.81)
+					(name "Pin_3"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "3"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin passive line
+					(at -5.08 -2.54 0)
+					(length 3.81)
+					(name "Pin_4"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "4"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin passive line
+					(at -5.08 -5.08 0)
+					(length 3.81)
+					(name "Pin_5"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "5"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+			)
+		)
 		(symbol "Device:Buzzer"
 			(pin_names
 				(offset 0.0254) hide)
@@ -3324,193 +3550,6 @@
 				)
 			)
 		)
-		(symbol "Switch:SW_Push_SPDT"
-			(pin_names
-				(offset 0) hide)
-			(exclude_from_sim no)
-			(in_bom yes)
-			(on_board yes)
-			(property "Reference" "SW"
-				(at 0 5.08 0)
-				(effects
-					(font
-						(size 1.27 1.27)
-					)
-				)
-			)
-			(property "Value" "SW_Push_SPDT"
-				(at 0 -5.08 0)
-				(effects
-					(font
-						(size 1.27 1.27)
-					)
-				)
-			)
-			(property "Footprint" ""
-				(at 0 0 0)
-				(effects
-					(font
-						(size 1.27 1.27)
-					)
-					(hide yes)
-				)
-			)
-			(property "Datasheet" "~"
-				(at 0 0 0)
-				(effects
-					(font
-						(size 1.27 1.27)
-					)
-					(hide yes)
-				)
-			)
-			(property "Description" "Momentary Switch, single pole double throw"
-				(at 0 0 0)
-				(effects
-					(font
-						(size 1.27 1.27)
-					)
-					(hide yes)
-				)
-			)
-			(property "ki_keywords" "switch single-pole double-throw spdt ON-ON"
-				(at 0 0 0)
-				(effects
-					(font
-						(size 1.27 1.27)
-					)
-					(hide yes)
-				)
-			)
-			(symbol "SW_Push_SPDT_0_0"
-				(circle
-					(center -2.032 0)
-					(radius 0.508)
-					(stroke
-						(width 0)
-						(type default)
-					)
-					(fill
-						(type none)
-					)
-				)
-				(polyline
-					(pts
-						(xy 0 1.016) (xy 0 3.048)
-					)
-					(stroke
-						(width 0)
-						(type default)
-					)
-					(fill
-						(type none)
-					)
-				)
-				(circle
-					(center 2.032 -2.54)
-					(radius 0.508)
-					(stroke
-						(width 0)
-						(type default)
-					)
-					(fill
-						(type none)
-					)
-				)
-			)
-			(symbol "SW_Push_SPDT_0_1"
-				(polyline
-					(pts
-						(xy -1.524 0.2032) (xy 2.3368 1.9812)
-					)
-					(stroke
-						(width 0)
-						(type default)
-					)
-					(fill
-						(type none)
-					)
-				)
-				(circle
-					(center 2.032 2.54)
-					(radius 0.508)
-					(stroke
-						(width 0)
-						(type default)
-					)
-					(fill
-						(type none)
-					)
-				)
-			)
-			(symbol "SW_Push_SPDT_1_1"
-				(rectangle
-					(start -3.175 3.81)
-					(end 3.175 -3.81)
-					(stroke
-						(width 0)
-						(type default)
-					)
-					(fill
-						(type background)
-					)
-				)
-				(pin passive line
-					(at 5.08 2.54 180)
-					(length 2.54)
-					(name "A"
-						(effects
-							(font
-								(size 1.27 1.27)
-							)
-						)
-					)
-					(number "1"
-						(effects
-							(font
-								(size 1.27 1.27)
-							)
-						)
-					)
-				)
-				(pin passive line
-					(at -5.08 0 0)
-					(length 2.54)
-					(name "B"
-						(effects
-							(font
-								(size 1.27 1.27)
-							)
-						)
-					)
-					(number "2"
-						(effects
-							(font
-								(size 1.27 1.27)
-							)
-						)
-					)
-				)
-				(pin passive line
-					(at 5.08 -2.54 180)
-					(length 2.54)
-					(name "C"
-						(effects
-							(font
-								(size 1.27 1.27)
-							)
-						)
-					)
-					(number "3"
-						(effects
-							(font
-								(size 1.27 1.27)
-							)
-						)
-					)
-				)
-			)
-		)
 		(symbol "Transistor_BJT:2SC1815"
 			(pin_names
 				(offset 0) hide)
@@ -4335,8 +4374,16 @@
 		(uuid "44bb088d-b7b9-4f14-b4f8-fae2256657a3")
 	)
 	(no_connect
-		(at 210.82 45.72)
-		(uuid "a44373e3-9c22-4dfe-8e39-dd7c30138d12")
+		(at 203.2 50.8)
+		(uuid "65025ca6-7002-4b5b-9315-0e9e63411bc6")
+	)
+	(no_connect
+		(at 205.74 50.8)
+		(uuid "7219c0a0-9354-4da6-8b59-6bac6a4a8ffe")
+	)
+	(no_connect
+		(at 213.36 50.8)
+		(uuid "84b8a87f-8c53-4b73-bfc5-ec7b916db778")
 	)
 	(bus_entry
 		(at 86.36 134.62)
@@ -4797,6 +4844,16 @@
 			(type default)
 		)
 		(uuid "0f200e12-d1aa-4156-9732-65438bbba225")
+	)
+	(wire
+		(pts
+			(xy 208.28 48.26) (xy 208.28 50.8)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "10ad9add-2f72-494e-b052-7b80bda53f6e")
 	)
 	(wire
 		(pts
@@ -5327,16 +5384,6 @@
 			(type default)
 		)
 		(uuid "48e8c284-a2e2-4c00-bb28-b5e46163d7f3")
-	)
-	(wire
-		(pts
-			(xy 220.98 48.26) (xy 226.06 48.26)
-		)
-		(stroke
-			(width 0)
-			(type default)
-		)
-		(uuid "4c0e1033-3bc4-40ab-acc3-71b9393d92db")
 	)
 	(wire
 		(pts
@@ -6370,6 +6417,16 @@
 	)
 	(wire
 		(pts
+			(xy 199.39 48.26) (xy 208.28 48.26)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "b9620e00-c441-42fd-8e4f-e6a085d5bf03")
+	)
+	(wire
+		(pts
 			(xy 36.83 172.72) (xy 46.99 172.72)
 		)
 		(stroke
@@ -6427,16 +6484,6 @@
 			(type default)
 		)
 		(uuid "c16353e1-a5b1-4f79-ab7f-6cad7723aa4e")
-	)
-	(wire
-		(pts
-			(xy 208.28 50.8) (xy 210.82 50.8)
-		)
-		(stroke
-			(width 0)
-			(type default)
-		)
-		(uuid "c2ec9049-39e4-4d7d-be6e-a1864f085ccd")
 	)
 	(bus
 		(pts
@@ -6690,6 +6737,16 @@
 	)
 	(wire
 		(pts
+			(xy 210.82 48.26) (xy 226.06 48.26)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "e4f315fe-6c1b-4a07-b3de-46506c035375")
+	)
+	(wire
+		(pts
 			(xy 171.45 74.93) (xy 175.26 74.93)
 		)
 		(stroke
@@ -6840,6 +6897,16 @@
 	)
 	(wire
 		(pts
+			(xy 210.82 50.8) (xy 210.82 48.26)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "f16da225-6cfa-450d-9d2f-d627cb9075a5")
+	)
+	(wire
+		(pts
 			(xy 93.98 50.8) (xy 91.44 50.8)
 		)
 		(stroke
@@ -6967,6 +7034,17 @@
 			(type default)
 		)
 		(uuid "ff2f456e-cecc-48f4-9ef2-c78b3064e11b")
+	)
+	(text "スイッチを上に押したときに\nON になるようにピン配置した"
+		(exclude_from_sim no)
+		(at 207.264 43.942 0)
+		(effects
+			(font
+				(face "Meiryo UI")
+				(size 1.27 1.27)
+			)
+		)
+		(uuid "22577dfb-157f-40a0-b4fa-fb3fb07c5fc7")
 	)
 	(text "三端子レギュレータは以下のいずれかを使用する予定\n* BA033CC0T (3.3V1A, モールド) \\100\n* LM2940T-3.3 (3.3V1A, 非モールド) \\60\n※NJU7223 はピン配置が異なるので使用不可"
 		(exclude_from_sim no)
@@ -7689,7 +7767,7 @@
 	)
 	(global_label "VBUS"
 		(shape input)
-		(at 208.28 50.8 180)
+		(at 199.39 48.26 180)
 		(fields_autoplaced yes)
 		(effects
 			(font
@@ -7699,7 +7777,7 @@
 		)
 		(uuid "3a614b7c-e2b4-409a-9ebc-fe0f17f0739d")
 		(property "Intersheetrefs" "${INTERSHEET_REFS}"
-			(at 200.3962 50.8 0)
+			(at 191.5062 48.26 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -8888,77 +8966,6 @@
 			(project "Rustorch"
 				(path "/3b188497-bb0d-4776-a9fa-7cb2b780d2ff"
 					(reference "R2")
-					(unit 1)
-				)
-			)
-		)
-	)
-	(symbol
-		(lib_id "Switch:SW_Push_SPDT")
-		(at 215.9 48.26 180)
-		(unit 1)
-		(exclude_from_sim no)
-		(in_bom yes)
-		(on_board yes)
-		(dnp no)
-		(fields_autoplaced yes)
-		(uuid "16bc7655-ce71-4127-9588-ac2100844fcc")
-		(property "Reference" "SW1"
-			(at 215.9 39.37 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "Value" "SW_POWER (5P)"
-			(at 215.9 41.91 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "Footprint" "Button_Switch_THT:SW_Slide_SPDT_Straight_CK_OS102011MS2Q"
-			(at 215.9 48.26 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(property "Datasheet" "~"
-			(at 215.9 48.26 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(property "Description" "Momentary Switch, single pole double throw"
-			(at 215.9 48.26 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(pin "1"
-			(uuid "6a7a1bcb-1c17-46aa-a2d0-7f2fc1f75fe7")
-		)
-		(pin "2"
-			(uuid "e06fedbb-e078-4d1f-8830-aad2ed140064")
-		)
-		(pin "3"
-			(uuid "b7a95eef-ee51-49f8-bde0-98cf84ed4a9f")
-		)
-		(instances
-			(project ""
-				(path "/3b188497-bb0d-4776-a9fa-7cb2b780d2ff"
-					(reference "SW1")
 					(unit 1)
 				)
 			)
@@ -10928,6 +10935,85 @@
 			(project "Rustorch"
 				(path "/3b188497-bb0d-4776-a9fa-7cb2b780d2ff"
 					(reference "#PWR04")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(symbol
+		(lib_id "Connector_Generic:Conn_01x05")
+		(at 208.28 55.88 90)
+		(mirror x)
+		(unit 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(dnp no)
+		(uuid "6b0f4df5-db0b-4161-9146-5c8885b696e7")
+		(property "Reference" "SW1"
+			(at 210.312 58.928 90)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+			)
+		)
+		(property "Value" "ToggleSW 3P"
+			(at 214.63 61.214 90)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+			)
+		)
+		(property "Footprint" "Connector_PinSocket_2.54mm:PinSocket_1x05_P2.54mm_Vertical"
+			(at 208.28 55.88 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Datasheet" "~"
+			(at 208.28 55.88 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Description" "Generic connector, single row, 01x05, script generated (kicad-library-utils/schlib/autogen/connector/)"
+			(at 208.28 55.88 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(pin "5"
+			(uuid "b14c0b33-3a40-498c-91c9-72b9b86e2731")
+		)
+		(pin "3"
+			(uuid "0252dd5e-1305-4fe8-9396-0144a22a97bf")
+		)
+		(pin "1"
+			(uuid "2de88f5d-e879-450e-9a67-87e461767b74")
+		)
+		(pin "2"
+			(uuid "cc42e656-10ab-46da-8173-9ed581fde866")
+		)
+		(pin "4"
+			(uuid "00daf8e7-1286-43c8-8d51-98ca27487985")
+		)
+		(instances
+			(project ""
+				(path "/3b188497-bb0d-4776-a9fa-7cb2b780d2ff"
+					(reference "SW1")
 					(unit 1)
 				)
 			)
