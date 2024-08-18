@@ -4228,12 +4228,6 @@
 		(uuid "34d306da-3539-4472-9fb5-7fc89b8a8558")
 	)
 	(junction
-		(at 129.54 149.86)
-		(diameter 0)
-		(color 0 0 0 0)
-		(uuid "3c78f16c-b7e0-43b9-bcef-213f83a793fe")
-	)
-	(junction
 		(at 91.44 50.8)
 		(diameter 0)
 		(color 0 0 0 0)
@@ -4250,12 +4244,6 @@
 		(diameter 0)
 		(color 0 0 0 0)
 		(uuid "6b51ac77-4897-4498-8974-50d81cffbac6")
-	)
-	(junction
-		(at 83.82 149.86)
-		(diameter 0)
-		(color 0 0 0 0)
-		(uuid "6cc65455-e431-42a6-9d67-4c73f5526f68")
 	)
 	(junction
 		(at 250.19 134.62)
@@ -4300,12 +4288,6 @@
 		(uuid "ae43764f-f022-4b46-a13e-a3d468c9804f")
 	)
 	(junction
-		(at 152.4 149.86)
-		(diameter 0)
-		(color 0 0 0 0)
-		(uuid "c0f0d41d-9980-4655-abcc-b8598fca042a")
-	)
-	(junction
 		(at 109.22 118.11)
 		(diameter 0)
 		(color 0 0 0 0)
@@ -4348,12 +4330,6 @@
 		(uuid "e45b1775-6b06-405e-b4bf-7f059d64ef8c")
 	)
 	(junction
-		(at 106.68 149.86)
-		(diameter 0)
-		(color 0 0 0 0)
-		(uuid "e46071b6-6c87-4729-895d-f038cfcdee20")
-	)
-	(junction
 		(at 91.44 62.23)
 		(diameter 0)
 		(color 0 0 0 0)
@@ -4366,12 +4342,24 @@
 		(uuid "fb8bd480-3fb6-42fe-99db-e8b581b6c8f5")
 	)
 	(no_connect
+		(at 129.54 149.86)
+		(uuid "23ddcd33-3a88-49b7-a089-43aae2902165")
+	)
+	(no_connect
 		(at 50.8 74.93)
 		(uuid "287a38ba-be0f-4eb8-9d9a-d42e20beb32f")
 	)
 	(no_connect
 		(at 50.8 77.47)
 		(uuid "44bb088d-b7b9-4f14-b4f8-fae2256657a3")
+	)
+	(no_connect
+		(at 152.4 149.86)
+		(uuid "4afb7797-5475-44ff-938f-420820336a59")
+	)
+	(no_connect
+		(at 106.68 149.86)
+		(uuid "511bc4e4-bade-41b0-a370-c5ad183cbbc4")
 	)
 	(no_connect
 		(at 203.2 50.8)
@@ -4384,6 +4372,10 @@
 	(no_connect
 		(at 213.36 50.8)
 		(uuid "84b8a87f-8c53-4b73-bfc5-ec7b916db778")
+	)
+	(no_connect
+		(at 83.82 149.86)
+		(uuid "c72b503a-e7cf-4fd6-ae3b-45e77adb0361")
 	)
 	(bus_entry
 		(at 86.36 134.62)
@@ -4755,16 +4747,6 @@
 		)
 		(uuid "0035a47f-a362-48c1-beac-0741b87a74d7")
 	)
-	(wire
-		(pts
-			(xy 152.4 149.86) (xy 152.4 153.67)
-		)
-		(stroke
-			(width 0)
-			(type default)
-		)
-		(uuid "03cf1d2b-1374-47ca-86bf-46b9777ff30d")
-	)
 	(bus
 		(pts
 			(xy 132.08 144.78) (xy 132.08 147.32)
@@ -4925,16 +4907,6 @@
 		)
 		(uuid "18876b5b-300b-42e7-98db-3fa31a1c89df")
 	)
-	(wire
-		(pts
-			(xy 152.4 147.32) (xy 152.4 149.86)
-		)
-		(stroke
-			(width 0)
-			(type default)
-		)
-		(uuid "1907e91c-7498-4ed1-aa8e-ec8a1474aa2c")
-	)
 	(bus
 		(pts
 			(xy 109.22 144.78) (xy 109.22 142.24)
@@ -5057,6 +5029,16 @@
 	)
 	(wire
 		(pts
+			(xy 129.54 147.32) (xy 130.81 147.32)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "26c43cb8-4869-4e90-ac93-d411bcf69837")
+	)
+	(wire
+		(pts
 			(xy 250.19 156.21) (xy 267.97 156.21)
 		)
 		(stroke
@@ -5084,6 +5066,16 @@
 			(type default)
 		)
 		(uuid "292b266d-234f-4404-8f88-ed9297ae823b")
+	)
+	(wire
+		(pts
+			(xy 130.81 147.32) (xy 130.81 153.67)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "2c3c848c-1e8d-4cb9-ab74-e3d548ac21e6")
 	)
 	(bus
 		(pts
@@ -5254,6 +5246,16 @@
 			(type default)
 		)
 		(uuid "3c64ad3d-be2a-4a04-99af-7e1bed21cdb4")
+	)
+	(wire
+		(pts
+			(xy 107.95 147.32) (xy 106.68 147.32)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "3cdb5d97-aadd-46d4-9850-e76ed18113a6")
 	)
 	(wire
 		(pts
@@ -5447,7 +5449,7 @@
 	)
 	(wire
 		(pts
-			(xy 116.84 158.75) (xy 121.92 158.75)
+			(xy 116.84 158.75) (xy 123.19 158.75)
 		)
 		(stroke
 			(width 0)
@@ -5577,6 +5579,16 @@
 	)
 	(wire
 		(pts
+			(xy 107.95 153.67) (xy 107.95 147.32)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "61fd3cc4-e548-4281-a704-36be7b120a39")
+	)
+	(wire
+		(pts
 			(xy 113.03 57.15) (xy 113.03 69.85)
 		)
 		(stroke
@@ -5697,6 +5709,16 @@
 	)
 	(wire
 		(pts
+			(xy 85.09 147.32) (xy 85.09 153.67)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "7370a5d2-d351-42c5-879c-ea0d4f628ff4")
+	)
+	(wire
+		(pts
 			(xy 134.62 137.16) (xy 137.16 137.16)
 		)
 		(stroke
@@ -5764,16 +5786,6 @@
 			(type default)
 		)
 		(uuid "7dbedaec-982c-4684-a0ca-c526d1ab2679")
-	)
-	(wire
-		(pts
-			(xy 106.68 147.32) (xy 106.68 149.86)
-		)
-		(stroke
-			(width 0)
-			(type default)
-		)
-		(uuid "7ec5d901-2150-45e7-b89b-6a1a72fa9983")
 	)
 	(wire
 		(pts
@@ -5854,6 +5866,16 @@
 			(type default)
 		)
 		(uuid "8524b414-af61-4937-93e6-da9bd9abdf3a")
+	)
+	(wire
+		(pts
+			(xy 152.4 147.32) (xy 153.67 147.32)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "85fd1a99-e6b4-496f-8a7c-e38514226f09")
 	)
 	(wire
 		(pts
@@ -6007,6 +6029,16 @@
 	)
 	(wire
 		(pts
+			(xy 83.82 147.32) (xy 85.09 147.32)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "999450fe-e6ed-4e7a-831b-d7ab5350bb55")
+	)
+	(wire
+		(pts
 			(xy 254 48.26) (xy 261.62 48.26)
 		)
 		(stroke
@@ -6027,7 +6059,7 @@
 	)
 	(wire
 		(pts
-			(xy 93.98 158.75) (xy 99.06 158.75)
+			(xy 93.98 158.75) (xy 100.33 158.75)
 		)
 		(stroke
 			(width 0)
@@ -6137,7 +6169,7 @@
 	)
 	(wire
 		(pts
-			(xy 71.12 158.75) (xy 76.2 158.75)
+			(xy 71.12 158.75) (xy 77.47 158.75)
 		)
 		(stroke
 			(width 0)
@@ -6387,16 +6419,6 @@
 	)
 	(wire
 		(pts
-			(xy 106.68 149.86) (xy 106.68 153.67)
-		)
-		(stroke
-			(width 0)
-			(type default)
-		)
-		(uuid "b6b48854-ede4-4dfd-83fd-51d087dac63c")
-	)
-	(wire
-		(pts
 			(xy 66.04 139.7) (xy 68.58 139.7)
 		)
 		(stroke
@@ -6467,13 +6489,13 @@
 	)
 	(wire
 		(pts
-			(xy 83.82 147.32) (xy 83.82 149.86)
+			(xy 153.67 147.32) (xy 153.67 153.67)
 		)
 		(stroke
 			(width 0)
 			(type default)
 		)
-		(uuid "be33d04e-7b32-4e4f-b9fb-6a75b0d3c230")
+		(uuid "c054047b-0d07-4d1e-a36e-9057f6279101")
 	)
 	(wire
 		(pts
@@ -6557,7 +6579,7 @@
 	)
 	(wire
 		(pts
-			(xy 139.7 158.75) (xy 144.78 158.75)
+			(xy 139.7 158.75) (xy 146.05 158.75)
 		)
 		(stroke
 			(width 0)
@@ -6614,16 +6636,6 @@
 			(type default)
 		)
 		(uuid "d14910ab-e549-437b-9b38-a2d0dd7650b1")
-	)
-	(wire
-		(pts
-			(xy 129.54 147.32) (xy 129.54 149.86)
-		)
-		(stroke
-			(width 0)
-			(type default)
-		)
-		(uuid "d1c04da1-2c66-425e-948e-c06ece70cd50")
 	)
 	(bus
 		(pts
@@ -6877,16 +6889,6 @@
 	)
 	(wire
 		(pts
-			(xy 83.82 149.86) (xy 83.82 153.67)
-		)
-		(stroke
-			(width 0)
-			(type default)
-		)
-		(uuid "f142ea49-c1b0-4ff0-bc1e-24d6b5620fc3")
-	)
-	(wire
-		(pts
 			(xy 262.89 97.79) (xy 262.89 119.38)
 		)
 		(stroke
@@ -6984,16 +6986,6 @@
 			(type default)
 		)
 		(uuid "fbb8fbff-0150-4551-941c-7842627f3048")
-	)
-	(wire
-		(pts
-			(xy 129.54 149.86) (xy 129.54 153.67)
-		)
-		(stroke
-			(width 0)
-			(type default)
-		)
-		(uuid "fcb3e534-0566-4bd9-854d-96e24b51f17a")
 	)
 	(bus
 		(pts
@@ -9760,7 +9752,7 @@
 	)
 	(symbol
 		(lib_id "Transistor_BJT:2SC1815")
-		(at 149.86 158.75 0)
+		(at 151.13 158.75 0)
 		(unit 1)
 		(exclude_from_sim no)
 		(in_bom yes)
@@ -9768,7 +9760,7 @@
 		(dnp no)
 		(uuid "3cc167d0-4bb0-47de-adba-307ed1a79a6b")
 		(property "Reference" "Q4"
-			(at 144.018 162.052 0)
+			(at 145.288 162.052 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -9777,7 +9769,7 @@
 			)
 		)
 		(property "Value" "2SC1815"
-			(at 140.716 164.338 0)
+			(at 141.986 164.338 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -9786,7 +9778,7 @@
 			)
 		)
 		(property "Footprint" "Package_TO_SOT_THT:TO-92_Inline"
-			(at 154.94 160.655 0)
+			(at 156.21 160.655 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -9797,7 +9789,7 @@
 			)
 		)
 		(property "Datasheet" "https://media.digikey.com/pdf/Data%20Sheets/Toshiba%20PDFs/2SC1815.pdf"
-			(at 149.86 158.75 0)
+			(at 151.13 158.75 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -9807,7 +9799,7 @@
 			)
 		)
 		(property "Description" "0.15A Ic, 50V Vce, Low Noise Audio NPN Transistor, TO-92"
-			(at 149.86 158.75 0)
+			(at 151.13 158.75 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -10054,7 +10046,7 @@
 	)
 	(symbol
 		(lib_id "Transistor_BJT:2SC1815")
-		(at 81.28 158.75 0)
+		(at 82.55 158.75 0)
 		(unit 1)
 		(exclude_from_sim no)
 		(in_bom yes)
@@ -10062,7 +10054,7 @@
 		(dnp no)
 		(uuid "554f00c6-07b3-405b-947e-5ea3c05f7dcc")
 		(property "Reference" "Q1"
-			(at 75.438 162.052 0)
+			(at 76.708 162.052 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -10071,7 +10063,7 @@
 			)
 		)
 		(property "Value" "2SC1815"
-			(at 72.136 164.338 0)
+			(at 73.406 164.338 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -10080,7 +10072,7 @@
 			)
 		)
 		(property "Footprint" "Package_TO_SOT_THT:TO-92_Inline"
-			(at 86.36 160.655 0)
+			(at 87.63 160.655 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -10091,7 +10083,7 @@
 			)
 		)
 		(property "Datasheet" "https://media.digikey.com/pdf/Data%20Sheets/Toshiba%20PDFs/2SC1815.pdf"
-			(at 81.28 158.75 0)
+			(at 82.55 158.75 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -10101,7 +10093,7 @@
 			)
 		)
 		(property "Description" "0.15A Ic, 50V Vce, Low Noise Audio NPN Transistor, TO-92"
-			(at 81.28 158.75 0)
+			(at 82.55 158.75 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -11912,7 +11904,7 @@
 	)
 	(symbol
 		(lib_id "Transistor_BJT:2SC1815")
-		(at 104.14 158.75 0)
+		(at 105.41 158.75 0)
 		(unit 1)
 		(exclude_from_sim no)
 		(in_bom yes)
@@ -11920,7 +11912,7 @@
 		(dnp no)
 		(uuid "a34e905e-2198-4c73-ad27-f2ec3429a568")
 		(property "Reference" "Q2"
-			(at 98.298 162.052 0)
+			(at 99.568 162.052 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -11929,7 +11921,7 @@
 			)
 		)
 		(property "Value" "2SC1815"
-			(at 94.996 164.338 0)
+			(at 96.266 164.338 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -11938,7 +11930,7 @@
 			)
 		)
 		(property "Footprint" "Package_TO_SOT_THT:TO-92_Inline"
-			(at 109.22 160.655 0)
+			(at 110.49 160.655 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -11949,7 +11941,7 @@
 			)
 		)
 		(property "Datasheet" "https://media.digikey.com/pdf/Data%20Sheets/Toshiba%20PDFs/2SC1815.pdf"
-			(at 104.14 158.75 0)
+			(at 105.41 158.75 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -11959,7 +11951,7 @@
 			)
 		)
 		(property "Description" "0.15A Ic, 50V Vce, Low Noise Audio NPN Transistor, TO-92"
-			(at 104.14 158.75 0)
+			(at 105.41 158.75 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -12321,7 +12313,7 @@
 	)
 	(symbol
 		(lib_id "power:GND")
-		(at 106.68 163.83 0)
+		(at 107.95 163.83 0)
 		(unit 1)
 		(exclude_from_sim no)
 		(in_bom yes)
@@ -12329,7 +12321,7 @@
 		(dnp no)
 		(uuid "b6dd6c1f-97a3-4e65-a9de-b490a628af3d")
 		(property "Reference" "#PWR07"
-			(at 106.68 170.18 0)
+			(at 107.95 170.18 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -12338,7 +12330,7 @@
 			)
 		)
 		(property "Value" "GND"
-			(at 106.68 168.91 0)
+			(at 107.95 168.91 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -12346,7 +12338,7 @@
 			)
 		)
 		(property "Footprint" ""
-			(at 106.68 163.83 0)
+			(at 107.95 163.83 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -12355,7 +12347,7 @@
 			)
 		)
 		(property "Datasheet" ""
-			(at 106.68 163.83 0)
+			(at 107.95 163.83 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -12364,7 +12356,7 @@
 			)
 		)
 		(property "Description" "Power symbol creates a global label with name \"GND\" , ground"
-			(at 106.68 163.83 0)
+			(at 107.95 163.83 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -12471,7 +12463,7 @@
 	)
 	(symbol
 		(lib_id "power:GND")
-		(at 152.4 163.83 0)
+		(at 153.67 163.83 0)
 		(unit 1)
 		(exclude_from_sim no)
 		(in_bom yes)
@@ -12479,7 +12471,7 @@
 		(dnp no)
 		(uuid "be6cf72b-e4fe-4b88-a721-525e857ebe25")
 		(property "Reference" "#PWR09"
-			(at 152.4 170.18 0)
+			(at 153.67 170.18 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -12488,7 +12480,7 @@
 			)
 		)
 		(property "Value" "GND"
-			(at 152.4 168.91 0)
+			(at 153.67 168.91 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -12496,7 +12488,7 @@
 			)
 		)
 		(property "Footprint" ""
-			(at 152.4 163.83 0)
+			(at 153.67 163.83 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -12505,7 +12497,7 @@
 			)
 		)
 		(property "Datasheet" ""
-			(at 152.4 163.83 0)
+			(at 153.67 163.83 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -12514,7 +12506,7 @@
 			)
 		)
 		(property "Description" "Power symbol creates a global label with name \"GND\" , ground"
-			(at 152.4 163.83 0)
+			(at 153.67 163.83 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -12889,7 +12881,7 @@
 	)
 	(symbol
 		(lib_id "power:GND")
-		(at 83.82 163.83 0)
+		(at 85.09 163.83 0)
 		(unit 1)
 		(exclude_from_sim no)
 		(in_bom yes)
@@ -12897,7 +12889,7 @@
 		(dnp no)
 		(uuid "cf3c7c1c-7d21-48c8-a537-f8278b7b9cc9")
 		(property "Reference" "#PWR01"
-			(at 83.82 170.18 0)
+			(at 85.09 170.18 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -12906,7 +12898,7 @@
 			)
 		)
 		(property "Value" "GND"
-			(at 83.82 168.91 0)
+			(at 85.09 168.91 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -12914,7 +12906,7 @@
 			)
 		)
 		(property "Footprint" ""
-			(at 83.82 163.83 0)
+			(at 85.09 163.83 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -12923,7 +12915,7 @@
 			)
 		)
 		(property "Datasheet" ""
-			(at 83.82 163.83 0)
+			(at 85.09 163.83 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -12932,7 +12924,7 @@
 			)
 		)
 		(property "Description" "Power symbol creates a global label with name \"GND\" , ground"
-			(at 83.82 163.83 0)
+			(at 85.09 163.83 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -13021,7 +13013,7 @@
 	)
 	(symbol
 		(lib_id "Transistor_BJT:2SC1815")
-		(at 127 158.75 0)
+		(at 128.27 158.75 0)
 		(unit 1)
 		(exclude_from_sim no)
 		(in_bom yes)
@@ -13029,7 +13021,7 @@
 		(dnp no)
 		(uuid "d65364d3-bd0c-4bb5-aaa5-64f67cade8fa")
 		(property "Reference" "Q3"
-			(at 121.158 162.052 0)
+			(at 122.428 162.052 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -13038,7 +13030,7 @@
 			)
 		)
 		(property "Value" "2SC1815"
-			(at 117.856 164.338 0)
+			(at 119.126 164.338 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -13047,7 +13039,7 @@
 			)
 		)
 		(property "Footprint" "Package_TO_SOT_THT:TO-92_Inline"
-			(at 132.08 160.655 0)
+			(at 133.35 160.655 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -13058,7 +13050,7 @@
 			)
 		)
 		(property "Datasheet" "https://media.digikey.com/pdf/Data%20Sheets/Toshiba%20PDFs/2SC1815.pdf"
-			(at 127 158.75 0)
+			(at 128.27 158.75 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -13068,7 +13060,7 @@
 			)
 		)
 		(property "Description" "0.15A Ic, 50V Vce, Low Noise Audio NPN Transistor, TO-92"
-			(at 127 158.75 0)
+			(at 128.27 158.75 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -14328,7 +14320,7 @@
 	)
 	(symbol
 		(lib_id "power:GND")
-		(at 129.54 163.83 0)
+		(at 130.81 163.83 0)
 		(unit 1)
 		(exclude_from_sim no)
 		(in_bom yes)
@@ -14336,7 +14328,7 @@
 		(dnp no)
 		(uuid "f6943683-ab8b-4f1a-82e4-73e47540a811")
 		(property "Reference" "#PWR08"
-			(at 129.54 170.18 0)
+			(at 130.81 170.18 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -14345,7 +14337,7 @@
 			)
 		)
 		(property "Value" "GND"
-			(at 129.54 168.91 0)
+			(at 130.81 168.91 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -14353,7 +14345,7 @@
 			)
 		)
 		(property "Footprint" ""
-			(at 129.54 163.83 0)
+			(at 130.81 163.83 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -14362,7 +14354,7 @@
 			)
 		)
 		(property "Datasheet" ""
-			(at 129.54 163.83 0)
+			(at 130.81 163.83 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -14371,7 +14363,7 @@
 			)
 		)
 		(property "Description" "Power symbol creates a global label with name \"GND\" , ground"
-			(at 129.54 163.83 0)
+			(at 130.81 163.83 0)
 			(effects
 				(font
 					(size 1.27 1.27)
