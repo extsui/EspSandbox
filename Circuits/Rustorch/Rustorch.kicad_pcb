@@ -9,8 +9,6 @@
 	(paper "A4")
 	(layers
 		(0 "F.Cu" signal)
-		(1 "In1.Cu" signal)
-		(2 "In2.Cu" signal)
 		(31 "B.Cu" signal)
 		(32 "B.Adhes" user "B.Adhesive")
 		(33 "F.Adhes" user "F.Adhesive")
@@ -57,30 +55,8 @@
 				(thickness 0.035)
 			)
 			(layer "dielectric 1"
-				(type "prepreg")
-				(thickness 0.1)
-				(material "FR4")
-				(epsilon_r 4.5)
-				(loss_tangent 0.02)
-			)
-			(layer "In1.Cu"
-				(type "copper")
-				(thickness 0.035)
-			)
-			(layer "dielectric 2"
 				(type "core")
-				(thickness 1.24)
-				(material "FR4")
-				(epsilon_r 4.5)
-				(loss_tangent 0.02)
-			)
-			(layer "In2.Cu"
-				(type "copper")
-				(thickness 0.035)
-			)
-			(layer "dielectric 3"
-				(type "prepreg")
-				(thickness 0.1)
+				(thickness 1.51)
 				(material "FR4")
 				(epsilon_r 4.5)
 				(loss_tangent 0.02)
@@ -19487,30 +19463,6 @@
 		(uuid "d27f4285-30f7-49c5-92f5-263283e7c967")
 	)
 	(segment
-		(start 116.885 85.685)
-		(end 116.865 85.665)
-		(width 0.5)
-		(layer "In2.Cu")
-		(net 4)
-		(uuid "3137d9c3-232b-4c5b-bc3e-774ca64afaf9")
-	)
-	(segment
-		(start 115.175685 99.155685)
-		(end 115.02 99)
-		(width 0.5)
-		(layer "In2.Cu")
-		(net 4)
-		(uuid "9228ac2e-3a24-498a-a662-7d5e265786c0")
-	)
-	(segment
-		(start 141.7925 105.35)
-		(end 141.65 105.35)
-		(width 0.5)
-		(layer "In2.Cu")
-		(net 4)
-		(uuid "ba2a26c7-b220-4245-a85f-e6f18ee92b75")
-	)
-	(segment
 		(start 149.6665 113.224)
 		(end 159.938 113.224)
 		(width 0.5)
@@ -24593,7 +24545,7 @@
 	(zone
 		(net 0)
 		(net_name "")
-		(layers "F.Cu" "In1.Cu" "In2.Cu" "B.Cu")
+		(layers "F&B.Cu")
 		(uuid "9f64059c-5eb7-4792-8b75-c3bf3217a762")
 		(hatch edge 0.5)
 		(connect_pads
