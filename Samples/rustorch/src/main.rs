@@ -42,35 +42,38 @@ fn main() -> anyhow::Result<()> {
     seg_digit3.set_low()?;
     seg_digit4.set_low()?;
 
-    let mut polarity = true;
+    const NUMBER_SEGMENT_TABLE: [u8; 10] = [
+        0xFC,   // 0
+        0x60,   // 1
+        0xDA,   // 2
+        0xF2,   // 3
+        0x66,   // 4
+        0xB6,   // 5
+        0xBE,   // 6
+        0xE4,   // 7
+        0xFE,   // 8
+        0xF6,   // 9
+    ];
+
+    let mut display_number = 0;
 
     let mut i = 0;
     loop {
         log::info!("{}", i);
 
-        if i % 50 == 0 {
-            polarity ^= true;
+        if i % 100 == 0 {
+            display_number = (display_number + 1) % NUMBER_SEGMENT_TABLE.len();
         }
 
-        if polarity {
-            seg_a.set_high()?;
-            seg_b.set_high()?;
-            seg_c.set_high()?;
-            seg_d.set_high()?;
-            seg_e.set_high()?;
-            seg_f.set_high()?;
-            seg_g.set_high()?;
-            seg_dot.set_high()?;
-        } else {
-            seg_a.set_low()?;
-            seg_b.set_low()?;
-            seg_c.set_low()?;
-            seg_d.set_low()?;
-            seg_e.set_low()?;
-            seg_f.set_low()?;
-            seg_g.set_low()?;
-            seg_dot.set_low()?;
-        }
+        let bit_pattern = NUMBER_SEGMENT_TABLE[display_number];
+        if (bit_pattern & ((1 as u8) << 7)) != 0 { seg_a.set_high()? } else { seg_a.set_low()?; }
+        if (bit_pattern & ((1 as u8) << 6)) != 0 { seg_b.set_high()? } else { seg_b.set_low()?; }
+        if (bit_pattern & ((1 as u8) << 5)) != 0 { seg_c.set_high()? } else { seg_c.set_low()?; }
+        if (bit_pattern & ((1 as u8) << 4)) != 0 { seg_d.set_high()? } else { seg_d.set_low()?; }
+        if (bit_pattern & ((1 as u8) << 3)) != 0 { seg_e.set_high()? } else { seg_e.set_low()?; }
+        if (bit_pattern & ((1 as u8) << 2)) != 0 { seg_f.set_high()? } else { seg_f.set_low()?; }
+        if (bit_pattern & ((1 as u8) << 1)) != 0 { seg_g.set_high()? } else { seg_g.set_low()?; }
+        if (bit_pattern & ((1 as u8) << 0)) != 0 { seg_dot.set_high()? } else { seg_dot.set_low()?; }
     
         // ON 期間
         if i % 4 == 0 {
@@ -82,14 +85,13 @@ fn main() -> anyhow::Result<()> {
         } else {
             seg_digit4.set_high()?;
         }
-        FreeRtos::delay_ms(5);
+        FreeRtos::delay_ms(4);
         
         // OFF 期間
         seg_digit1.set_low()?;
         seg_digit2.set_low()?;
         seg_digit3.set_low()?;
         seg_digit4.set_low()?;
-        FreeRtos::delay_ms(0);
 
         i += 1;
     }
