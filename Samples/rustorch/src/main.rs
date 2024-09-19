@@ -1,46 +1,38 @@
+use esp_idf_hal::gpio::OutputPin;
 use esp_idf_hal::gpio::PinDriver;
+use esp_idf_hal::gpio::AnyOutputPin;
 use esp_idf_hal::delay::FreeRtos;
 use esp_idf_hal::peripherals::Peripherals;
+use std::thread;
 
-fn main() -> anyhow::Result<()> {
-    // It is necessary to call this function once. Otherwise some patches to the runtime
-    // implemented by esp-idf-sys might not link properly. See https://github.com/esp-rs/esp-idf-template/issues/71
-    esp_idf_svc::sys::link_patches();
+struct Leds {
+    seg_a: AnyOutputPin,
+    seg_b: AnyOutputPin,
+    seg_c: AnyOutputPin,
+    seg_d: AnyOutputPin,
+    seg_e: AnyOutputPin,
+    seg_f: AnyOutputPin,
+    seg_g: AnyOutputPin,
+    seg_dot: AnyOutputPin,
+    seg_digit1: AnyOutputPin,
+    seg_digit2: AnyOutputPin,
+    seg_digit3: AnyOutputPin,
+    seg_digit4: AnyOutputPin,
+}
 
-    // Bind the log crate to the ESP Logging facilities
-    esp_idf_svc::log::EspLogger::initialize_default();
-    
-    log::info!("Hello, world!");
-
-    let peripherals = Peripherals::take()?;
-
-    let mut seg_a = PinDriver::output(peripherals.pins.gpio21)?;
-    let mut seg_b = PinDriver::output(peripherals.pins.gpio22)?;
-    let mut seg_c = PinDriver::output(peripherals.pins.gpio23)?;
-    let mut seg_d = PinDriver::output(peripherals.pins.gpio15)?;
-    let mut seg_e = PinDriver::output(peripherals.pins.gpio17)?;
-    let mut seg_f = PinDriver::output(peripherals.pins.gpio16)?;
-    let mut seg_g = PinDriver::output(peripherals.pins.gpio3)?;
-    let mut seg_dot = PinDriver::output(peripherals.pins.gpio2)?;
-    
-    let mut seg_digit1 = PinDriver::output(peripherals.pins.gpio11)?;
-    let mut seg_digit2 = PinDriver::output(peripherals.pins.gpio18)?;
-    let mut seg_digit3 = PinDriver::output(peripherals.pins.gpio19)?;
-    let mut seg_digit4 = PinDriver::output(peripherals.pins.gpio20)?;
-
-    seg_a.set_low()?;
-    seg_b.set_low()?;
-    seg_c.set_low()?;
-    seg_d.set_low()?;
-    seg_e.set_low()?;
-    seg_f.set_low()?;
-    seg_g.set_low()?;
-    seg_dot.set_low()?;
-
-    seg_digit1.set_low()?;
-    seg_digit2.set_low()?;
-    seg_digit3.set_low()?;
-    seg_digit4.set_low()?;
+fn run_thread(pins: Leds) -> anyhow::Result<()> {
+    let mut seg_a = PinDriver::output(pins.seg_a)?;
+    let mut seg_b = PinDriver::output(pins.seg_b)?;
+    let mut seg_c = PinDriver::output(pins.seg_c)?;
+    let mut seg_d = PinDriver::output(pins.seg_d)?;
+    let mut seg_e = PinDriver::output(pins.seg_e)?;
+    let mut seg_f = PinDriver::output(pins.seg_f)?;
+    let mut seg_g = PinDriver::output(pins.seg_g)?;
+    let mut seg_dot = PinDriver::output(pins.seg_dot)?;
+    let mut seg_digit1 = PinDriver::output(pins.seg_digit1)?;
+    let mut seg_digit2 = PinDriver::output(pins.seg_digit2)?;
+    let mut seg_digit3 = PinDriver::output(pins.seg_digit3)?;
+    let mut seg_digit4 = PinDriver::output(pins.seg_digit4)?;
 
     const NUMBER_SEGMENT_TABLE: [u8; 10] = [
         0xFC,   // 0
@@ -95,4 +87,37 @@ fn main() -> anyhow::Result<()> {
 
         i += 1;
     }
+}
+
+fn main() -> anyhow::Result<()> {
+    // It is necessary to call this function once. Otherwise some patches to the runtime
+    // implemented by esp-idf-sys might not link properly. See https://github.com/esp-rs/esp-idf-template/issues/71
+    esp_idf_svc::sys::link_patches();
+
+    // Bind the log crate to the ESP Logging facilities
+    esp_idf_svc::log::EspLogger::initialize_default();
+    
+    log::info!("Hello, world!");
+
+    let peripherals = Peripherals::take()?;
+
+    let leds = Leds {
+        seg_a: peripherals.pins.gpio21.downgrade_output(),
+        seg_b: peripherals.pins.gpio22.downgrade_output(),
+        seg_c: peripherals.pins.gpio23.downgrade_output(),
+        seg_d: peripherals.pins.gpio15.downgrade_output(),
+        seg_e: peripherals.pins.gpio17.downgrade_output(),
+        seg_f: peripherals.pins.gpio16.downgrade_output(),
+        seg_g: peripherals.pins.gpio3.downgrade_output(),
+        seg_dot: peripherals.pins.gpio2.downgrade_output(),
+        seg_digit1: peripherals.pins.gpio11.downgrade_output(),
+        seg_digit2: peripherals.pins.gpio18.downgrade_output(),
+        seg_digit3: peripherals.pins.gpio19.downgrade_output(),
+        seg_digit4: peripherals.pins.gpio20.downgrade_output(),
+    };
+
+    let handle = thread::spawn(move || run_thread(leds));
+    let _ = handle.join();
+
+    Ok(())
 }
