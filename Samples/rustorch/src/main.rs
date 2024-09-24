@@ -1,8 +1,12 @@
+use esp_idf_hal::gpio::AnyInputPin;
+use esp_idf_hal::gpio::InputPin;
 use esp_idf_hal::gpio::OutputPin;
 use esp_idf_hal::gpio::PinDriver;
+use esp_idf_hal::gpio::Pull;
 use esp_idf_hal::gpio::AnyOutputPin;
 use esp_idf_hal::delay::FreeRtos;
 use esp_idf_hal::peripherals::Peripherals;
+use esp_idf_hal::sys::gpio_set_pull_mode;
 use std::thread;
 
 struct Leds {
@@ -18,6 +22,14 @@ struct Leds {
     seg_digit2: AnyOutputPin,
     seg_digit3: AnyOutputPin,
     seg_digit4: AnyOutputPin,
+}
+
+struct KeyMatrix {
+    key_in1: AnyInputPin,
+    key_in2: AnyInputPin,
+    key_in3: AnyInputPin,
+    key_out1: AnyOutputPin,
+    key_out2: AnyOutputPin,
 }
 
 fn run_thread(pins: Leds) -> anyhow::Result<()> {
@@ -51,10 +63,10 @@ fn run_thread(pins: Leds) -> anyhow::Result<()> {
 
     let mut i = 0;
     loop {
-        log::info!("{}", i);
-
         if i % 100 == 0 {
             display_number = (display_number + 1) % NUMBER_SEGMENT_TABLE.len();
+
+            log::info!("[led] {}", i);
         }
 
         let bit_pattern = NUMBER_SEGMENT_TABLE[display_number];
@@ -89,6 +101,79 @@ fn run_thread(pins: Leds) -> anyhow::Result<()> {
     }
 }
 
+fn run_key_scan_thread(pins: KeyMatrix) -> anyhow::Result<()> {
+
+    let in1 = PinDriver::input(pins.key_in1)?;
+    let in2 = PinDriver::input(pins.key_in2)?;
+    let in3 = PinDriver::input(pins.key_in3)?;
+    let mut out1 = PinDriver::output(pins.key_out1)?;
+    let mut out2 = PinDriver::output(pins.key_out2)?;
+
+    // in1, in3 は外部プルアップ抵抗があるのでそのまま
+    // in2 は外部プルアップ抵抗がないので内部プルアップを使う
+    unsafe {
+        // in2.set_pull() と書きたいのだが downgrade_input() 後は AnyInputPin 型になる
+        // 一方で set_pull() は InputPin + OutputPin を要求してくるので呼び出せなくなる
+        // --> set_pull() 内で呼び出している C 関数を直接呼び出すことで対処した
+        gpio_set_pull_mode(in2.pin(), Pull::Up.into());
+    }
+
+    let mut i = 0;
+
+    out1.set_high()?;
+    out2.set_low()?;
+
+    // 0: UP 
+    // 1: LEFT
+    // 2: DOWN
+    // 3: RIGHT
+    // 4: A
+    // 5: B
+    // 6: -
+    // 7: -
+    let mut button_out1: u8 = 0x00;
+    let mut button_out2: u8 = 0x00;
+
+    loop {
+        // 出力端子切り替えから入力端子が安定するまでにある程度時間がかかるはずなので
+        // 「出力端子切り替え -> ポーリング周期時間分ウェイト -> (ループ先頭) 入力取得」とする
+        if i % 2 == 0 {
+            if in1.is_low() { button_out1 |= 0x01 as u8; }   // SW_UP
+            if in2.is_low() { button_out1 |= 0x08 as u8; }   // SW_RIGHT
+            if in3.is_low() { button_out1 |= 0x10 as u8; }   // SW_A
+            out1.set_high()?;
+            out2.set_low()?;
+        } else {
+            if in1.is_low() { button_out2 |= 0x02 as u8; }   // SW_LEFT
+            if in2.is_low() { button_out2 |= 0x04 as u8; }   // SW_DOWN
+            if in3.is_low() { button_out2 |= 0x20 as u8; }   // SW_B
+            out1.set_low()?;
+            out2.set_high()?;
+        }
+
+        if i % 2 == 0 {
+            let button = button_out1 | button_out2;
+
+            log::info!(
+                "[key] {} {}{}{}{}{}{}", i / 2,
+                if button & 0x01 != 0 { '^' } else { ' ' },
+                if button & 0x02 != 0 { '<' } else { ' ' },
+                if button & 0x04 != 0 { 'v' } else { ' ' },
+                if button & 0x08 != 0 { '>' } else { ' ' },
+                if button & 0x10 != 0 { 'A' } else { ' ' },
+                if button & 0x20 != 0 { 'B' } else { ' ' },
+            );
+
+            button_out1 = 0;
+            button_out2 = 0;
+        }
+
+        FreeRtos::delay_ms(10);
+
+        i += 1;
+    }
+}
+
 fn main() -> anyhow::Result<()> {
     // It is necessary to call this function once. Otherwise some patches to the runtime
     // implemented by esp-idf-sys might not link properly. See https://github.com/esp-rs/esp-idf-template/issues/71
@@ -101,7 +186,7 @@ fn main() -> anyhow::Result<()> {
 
     let peripherals = Peripherals::take()?;
 
-    let leds = Leds {
+    let led_pins = Leds {
         seg_a: peripherals.pins.gpio21.downgrade_output(),
         seg_b: peripherals.pins.gpio22.downgrade_output(),
         seg_c: peripherals.pins.gpio23.downgrade_output(),
@@ -116,8 +201,19 @@ fn main() -> anyhow::Result<()> {
         seg_digit4: peripherals.pins.gpio20.downgrade_output(),
     };
 
-    let handle = thread::spawn(move || run_thread(leds));
-    let _ = handle.join();
+    let key_matrix_pins = KeyMatrix {
+        key_in1: peripherals.pins.gpio9.downgrade_input(),
+        key_in2: peripherals.pins.gpio10.downgrade_input(),
+        key_in3: peripherals.pins.gpio8.downgrade_input(),
+        key_out1: peripherals.pins.gpio1.downgrade_output(),
+        key_out2: peripherals.pins.gpio0.downgrade_output(),
+    };
+
+    let led_handle = thread::spawn(move || run_thread(led_pins));
+    let key_scan_thread_handle = thread::spawn(move || run_key_scan_thread(key_matrix_pins));
+
+    let _ = led_handle.join();
+    let _ = key_scan_thread_handle.join();
 
     Ok(())
 }
