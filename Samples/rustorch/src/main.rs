@@ -12,7 +12,7 @@ use std::sync::{Arc, Mutex};
 use esp_idf_hal::ledc::*;
 use esp_idf_hal::prelude::*;
 
-struct Leds {
+struct LedPins {
     seg_a: AnyOutputPin,
     seg_b: AnyOutputPin,
     seg_c: AnyOutputPin,
@@ -27,72 +27,92 @@ struct Leds {
     seg_digit4: AnyOutputPin,
 }
 
-fn run_thread(pins: Leds) -> anyhow::Result<()> {
-    let mut seg_a = PinDriver::output(pins.seg_a)?;
-    let mut seg_b = PinDriver::output(pins.seg_b)?;
-    let mut seg_c = PinDriver::output(pins.seg_c)?;
-    let mut seg_d = PinDriver::output(pins.seg_d)?;
-    let mut seg_e = PinDriver::output(pins.seg_e)?;
-    let mut seg_f = PinDriver::output(pins.seg_f)?;
-    let mut seg_g = PinDriver::output(pins.seg_g)?;
-    let mut seg_dot = PinDriver::output(pins.seg_dot)?;
-    let mut seg_digit1 = PinDriver::output(pins.seg_digit1)?;
-    let mut seg_digit2 = PinDriver::output(pins.seg_digit2)?;
-    let mut seg_digit3 = PinDriver::output(pins.seg_digit3)?;
-    let mut seg_digit4 = PinDriver::output(pins.seg_digit4)?;
+#[derive(Clone, Copy)]
+struct LedDriver {
+    data: [u8; 4],
+}
 
-    const NUMBER_SEGMENT_TABLE: [u8; 10] = [
-        0xFC,   // 0
-        0x60,   // 1
-        0xDA,   // 2
-        0xF2,   // 3
-        0x66,   // 4
-        0xB6,   // 5
-        0xBE,   // 6
-        0xE4,   // 7
-        0xFE,   // 8
-        0xF6,   // 9
-    ];
-
-    let mut display_number = 0;
-
-    let mut i = 0;
-    loop {
-        if i % 100 == 0 {
-            display_number = (display_number + 1) % NUMBER_SEGMENT_TABLE.len();
-
-            log::info!("[led] {}", i);
+impl LedDriver {
+    pub fn new() -> Self {
+        LedDriver {
+            data: [ 0x00, 0x00, 0x00, 0x00 ],
         }
+    }
 
-        let bit_pattern = NUMBER_SEGMENT_TABLE[display_number];
-        if (bit_pattern & ((1 as u8) << 7)) != 0 { seg_a.set_high()? } else { seg_a.set_low()?; }
-        if (bit_pattern & ((1 as u8) << 6)) != 0 { seg_b.set_high()? } else { seg_b.set_low()?; }
-        if (bit_pattern & ((1 as u8) << 5)) != 0 { seg_c.set_high()? } else { seg_c.set_low()?; }
-        if (bit_pattern & ((1 as u8) << 4)) != 0 { seg_d.set_high()? } else { seg_d.set_low()?; }
-        if (bit_pattern & ((1 as u8) << 3)) != 0 { seg_e.set_high()? } else { seg_e.set_low()?; }
-        if (bit_pattern & ((1 as u8) << 2)) != 0 { seg_f.set_high()? } else { seg_f.set_low()?; }
-        if (bit_pattern & ((1 as u8) << 1)) != 0 { seg_g.set_high()? } else { seg_g.set_low()?; }
-        if (bit_pattern & ((1 as u8) << 0)) != 0 { seg_dot.set_high()? } else { seg_dot.set_low()?; }
-    
-        // ON 期間
-        if i % 4 == 0 {
-            seg_digit1.set_high()?;
-        } else if i % 4 == 1 {
-            seg_digit2.set_high()?;
-        } else if i % 4 == 2 {
-            seg_digit3.set_high()?;
-        } else {
-            seg_digit4.set_high()?;
-        }
-        FreeRtos::delay_ms(4);
+    pub fn start_dynamic_lighting(self, pins: LedPins) -> anyhow::Result<()> {
+        let _ = thread::spawn(move || -> anyhow::Result<()> {
+            let mut seg_a = PinDriver::output(pins.seg_a)?;
+            let mut seg_b = PinDriver::output(pins.seg_b)?;
+            let mut seg_c = PinDriver::output(pins.seg_c)?;
+            let mut seg_d = PinDriver::output(pins.seg_d)?;
+            let mut seg_e = PinDriver::output(pins.seg_e)?;
+            let mut seg_f = PinDriver::output(pins.seg_f)?;
+            let mut seg_g = PinDriver::output(pins.seg_g)?;
+            let mut seg_dot = PinDriver::output(pins.seg_dot)?;
+            let mut seg_digit1 = PinDriver::output(pins.seg_digit1)?;
+            let mut seg_digit2 = PinDriver::output(pins.seg_digit2)?;
+            let mut seg_digit3 = PinDriver::output(pins.seg_digit3)?;
+            let mut seg_digit4 = PinDriver::output(pins.seg_digit4)?;
         
-        // OFF 期間
-        seg_digit1.set_low()?;
-        seg_digit2.set_low()?;
-        seg_digit3.set_low()?;
-        seg_digit4.set_low()?;
+            const NUMBER_SEGMENT_TABLE: [u8; 10] = [
+                0xFC,   // 0
+                0x60,   // 1
+                0xDA,   // 2
+                0xF2,   // 3
+                0x66,   // 4
+                0xB6,   // 5
+                0xBE,   // 6
+                0xE4,   // 7
+                0xFE,   // 8
+                0xF6,   // 9
+            ];
+        
+            let mut display_number = 0;
+        
+            let mut i = 0;
+            loop {
+                if i % 100 == 0 {
+                    display_number = (display_number + 1) % NUMBER_SEGMENT_TABLE.len();
+        
+                    log::info!("[led] {}", i);
+                }
+        
+                let bit_pattern = NUMBER_SEGMENT_TABLE[display_number];
+                if (bit_pattern & ((1 as u8) << 7)) != 0 { seg_a.set_high()? } else { seg_a.set_low()?; }
+                if (bit_pattern & ((1 as u8) << 6)) != 0 { seg_b.set_high()? } else { seg_b.set_low()?; }
+                if (bit_pattern & ((1 as u8) << 5)) != 0 { seg_c.set_high()? } else { seg_c.set_low()?; }
+                if (bit_pattern & ((1 as u8) << 4)) != 0 { seg_d.set_high()? } else { seg_d.set_low()?; }
+                if (bit_pattern & ((1 as u8) << 3)) != 0 { seg_e.set_high()? } else { seg_e.set_low()?; }
+                if (bit_pattern & ((1 as u8) << 2)) != 0 { seg_f.set_high()? } else { seg_f.set_low()?; }
+                if (bit_pattern & ((1 as u8) << 1)) != 0 { seg_g.set_high()? } else { seg_g.set_low()?; }
+                if (bit_pattern & ((1 as u8) << 0)) != 0 { seg_dot.set_high()? } else { seg_dot.set_low()?; }
+            
+                // ON 期間
+                if i % 4 == 0 {
+                    seg_digit1.set_high()?;
+                } else if i % 4 == 1 {
+                    seg_digit2.set_high()?;
+                } else if i % 4 == 2 {
+                    seg_digit3.set_high()?;
+                } else {
+                    seg_digit4.set_high()?;
+                }
+                FreeRtos::delay_ms(4);
+                
+                // OFF 期間
+                seg_digit1.set_low()?;
+                seg_digit2.set_low()?;
+                seg_digit3.set_low()?;
+                seg_digit4.set_low()?;
+        
+                i += 1;
+            }
+        });
+        Ok(())
+    }
 
-        i += 1;
+    pub fn write(self, data: [u8; 4]) {
+        // TODO:
     }
 }
 
@@ -217,45 +237,47 @@ fn main() -> anyhow::Result<()> {
 
     let peripherals = Peripherals::take()?;
 
-    let led_pins = Leds {
-        seg_a: peripherals.pins.gpio21.downgrade_output(),
-        seg_b: peripherals.pins.gpio22.downgrade_output(),
-        seg_c: peripherals.pins.gpio23.downgrade_output(),
-        seg_d: peripherals.pins.gpio15.downgrade_output(),
-        seg_e: peripherals.pins.gpio17.downgrade_output(),
-        seg_f: peripherals.pins.gpio16.downgrade_output(),
-        seg_g: peripherals.pins.gpio3.downgrade_output(),
-        seg_dot: peripherals.pins.gpio2.downgrade_output(),
-        seg_digit1: peripherals.pins.gpio11.downgrade_output(),
-        seg_digit2: peripherals.pins.gpio18.downgrade_output(),
-        seg_digit3: peripherals.pins.gpio19.downgrade_output(),
-        seg_digit4: peripherals.pins.gpio20.downgrade_output(),
-    };
+    let led_driver = Arc::new(Mutex::new(LedDriver::new()));
+    {
+        let led_pins = LedPins {
+            seg_a: peripherals.pins.gpio21.downgrade_output(),
+            seg_b: peripherals.pins.gpio22.downgrade_output(),
+            seg_c: peripherals.pins.gpio23.downgrade_output(),
+            seg_d: peripherals.pins.gpio15.downgrade_output(),
+            seg_e: peripherals.pins.gpio17.downgrade_output(),
+            seg_f: peripherals.pins.gpio16.downgrade_output(),
+            seg_g: peripherals.pins.gpio3.downgrade_output(),
+            seg_dot: peripherals.pins.gpio2.downgrade_output(),
+            seg_digit1: peripherals.pins.gpio11.downgrade_output(),
+            seg_digit2: peripherals.pins.gpio18.downgrade_output(),
+            seg_digit3: peripherals.pins.gpio19.downgrade_output(),
+            seg_digit4: peripherals.pins.gpio20.downgrade_output(),
+        };
+        let led_driver_clone = Arc::clone(&led_driver);
+        led_driver_clone.lock().unwrap().start_dynamic_lighting(led_pins)?;
+    }
 
-    let key_matrix_pins = KeyMatrixPins {
-        key_in1: peripherals.pins.gpio9.downgrade_input(),
-        key_in2: peripherals.pins.gpio10.downgrade_input(),
-        key_in3: peripherals.pins.gpio8.downgrade_input(),
-        key_out1: peripherals.pins.gpio1.downgrade_output(),
-        key_out2: peripherals.pins.gpio0.downgrade_output(),
-    };
-    
     let key_matrix = Arc::new(Mutex::new(KeyMatrix::new()));
-    let key_matrix_clone = Arc::clone(&key_matrix);
+    {
+        let key_matrix_pins = KeyMatrixPins {
+            key_in1: peripherals.pins.gpio9.downgrade_input(),
+            key_in2: peripherals.pins.gpio10.downgrade_input(),
+            key_in3: peripherals.pins.gpio8.downgrade_input(),
+            key_out1: peripherals.pins.gpio1.downgrade_output(),
+            key_out2: peripherals.pins.gpio0.downgrade_output(),
+        };
+        let key_matrix_clone = Arc::clone(&key_matrix);
+        key_matrix_clone.lock().unwrap().start_scan(key_matrix_pins)?;
+    }
     
-    key_matrix_clone.lock().unwrap().start_scan(key_matrix_pins)?;
-    
+    // メインスレッド
     loop {
+        // ボタン情報取得
         let status = key_matrix.lock().unwrap().get_status();
-        
-        //let status = key_matrix.get_status();
         log::info!("{:02x}", status);
         
         FreeRtos::delay_ms(100);
     }
-    
-    let led_handle = thread::spawn(move || run_thread(led_pins));
-    let _ = led_handle.join();
 
 /*
     let buzzer_pin = peripherals.pins.gpio4;
