@@ -8,7 +8,7 @@ use esp_idf_hal::delay::FreeRtos;
 use esp_idf_hal::peripherals::Peripherals;
 use esp_idf_hal::sys::gpio_set_pull_mode;
 use std::thread;
-
+use std::sync::{Arc, Mutex};
 use esp_idf_hal::ledc::*;
 use esp_idf_hal::prelude::*;
 
@@ -25,14 +25,6 @@ struct Leds {
     seg_digit2: AnyOutputPin,
     seg_digit3: AnyOutputPin,
     seg_digit4: AnyOutputPin,
-}
-
-struct KeyMatrix {
-    key_in1: AnyInputPin,
-    key_in2: AnyInputPin,
-    key_in3: AnyInputPin,
-    key_out1: AnyOutputPin,
-    key_out2: AnyOutputPin,
 }
 
 fn run_thread(pins: Leds) -> anyhow::Result<()> {
@@ -104,76 +96,112 @@ fn run_thread(pins: Leds) -> anyhow::Result<()> {
     }
 }
 
-fn run_key_scan_thread(pins: KeyMatrix) -> anyhow::Result<()> {
+struct KeyMatrixPins {
+    key_in1: AnyInputPin,
+    key_in2: AnyInputPin,
+    key_in3: AnyInputPin,
+    key_out1: AnyOutputPin,
+    key_out2: AnyOutputPin,
+}
 
-    let in1 = PinDriver::input(pins.key_in1)?;
-    let in2 = PinDriver::input(pins.key_in2)?;
-    let in3 = PinDriver::input(pins.key_in3)?;
-    let mut out1 = PinDriver::output(pins.key_out1)?;
-    let mut out2 = PinDriver::output(pins.key_out2)?;
+struct KeyMatrix {
+    status: Arc<Mutex<u8>>,
+    is_scanning: bool,
+}
 
-    // in1, in3 は外部プルアップ抵抗があるのでそのまま
-    // in2 は外部プルアップ抵抗がないので内部プルアップを使う
-    unsafe {
-        // in2.set_pull() と書きたいのだが downgrade_input() 後は AnyInputPin 型になる
-        // 一方で set_pull() は InputPin + OutputPin を要求してくるので呼び出せなくなる
-        // --> set_pull() 内で呼び出している C 関数を直接呼び出すことで対処した
-        gpio_set_pull_mode(in2.pin(), Pull::Up.into());
+impl KeyMatrix {
+    pub fn new() -> Self {
+        KeyMatrix {
+            status: Arc::new(Mutex::new(0)),
+            is_scanning: false,
+        }
     }
 
-    let mut i = 0;
+    pub fn start_scan(&mut self, pins: KeyMatrixPins) -> anyhow::Result<()> {
+        assert!(!self.is_scanning);
+        self.is_scanning = true;
 
-    out1.set_high()?;
-    out2.set_low()?;
+        let status_clone = Arc::clone(&self.status);
 
-    // 0: UP 
-    // 1: LEFT
-    // 2: DOWN
-    // 3: RIGHT
-    // 4: A
-    // 5: B
-    // 6: -
-    // 7: -
-    let mut button_out1: u8 = 0x00;
-    let mut button_out2: u8 = 0x00;
-
-    loop {
-        // 出力端子切り替えから入力端子が安定するまでにある程度時間がかかるはずなので
-        // 「出力端子切り替え -> ポーリング周期時間分ウェイト -> (ループ先頭) 入力取得」とする
-        if i % 2 == 0 {
-            if in1.is_low() { button_out1 |= 0x01 as u8; }   // SW_UP
-            if in2.is_low() { button_out1 |= 0x08 as u8; }   // SW_RIGHT
-            if in3.is_low() { button_out1 |= 0x10 as u8; }   // SW_A
+        let _ = thread::spawn(move || -> anyhow::Result<()> {
+            let in1 = PinDriver::input(pins.key_in1)?;
+            let in2 = PinDriver::input(pins.key_in2)?;
+            let in3 = PinDriver::input(pins.key_in3)?;
+            let mut out1 = PinDriver::output(pins.key_out1)?;
+            let mut out2 = PinDriver::output(pins.key_out2)?;
+        
+            // in1, in3 は外部プルアップ抵抗があるのでそのまま
+            // in2 は外部プルアップ抵抗がないので内部プルアップを使う
+            unsafe {
+                // in2.set_pull() と書きたいのだが downgrade_input() 後は AnyInputPin 型になる
+                // 一方で set_pull() は InputPin + OutputPin を要求してくるので呼び出せなくなる
+                // --> set_pull() 内で呼び出している C 関数を直接呼び出すことで対処した
+                gpio_set_pull_mode(in2.pin(), Pull::Up.into());
+            }
+        
+            let mut i = 0;
+        
             out1.set_high()?;
             out2.set_low()?;
-        } else {
-            if in1.is_low() { button_out2 |= 0x02 as u8; }   // SW_LEFT
-            if in2.is_low() { button_out2 |= 0x04 as u8; }   // SW_DOWN
-            if in3.is_low() { button_out2 |= 0x20 as u8; }   // SW_B
-            out1.set_low()?;
-            out2.set_high()?;
-        }
+        
+            // 0: UP 
+            // 1: LEFT
+            // 2: DOWN
+            // 3: RIGHT
+            // 4: A
+            // 5: B
+            // 6: -
+            // 7: -
+            let mut button_out1: u8 = 0x00;
+            let mut button_out2: u8 = 0x00;
+        
+            loop {
+                // 出力端子切り替えから入力端子が安定するまでにある程度時間がかかるはずなので
+                // 「出力端子切り替え -> ポーリング周期時間分ウェイト -> (ループ先頭) 入力取得」とする
+                if i % 2 == 0 {
+                    if in1.is_low() { button_out1 |= 0x01 as u8; }   // SW_UP
+                    if in2.is_low() { button_out1 |= 0x08 as u8; }   // SW_RIGHT
+                    if in3.is_low() { button_out1 |= 0x10 as u8; }   // SW_A
+                    out1.set_high().unwrap();
+                    out2.set_low().unwrap();
+                } else {
+                    if in1.is_low() { button_out2 |= 0x02 as u8; }   // SW_LEFT
+                    if in2.is_low() { button_out2 |= 0x04 as u8; }   // SW_DOWN
+                    if in3.is_low() { button_out2 |= 0x20 as u8; }   // SW_B
+                    out1.set_low().unwrap();
+                    out2.set_high().unwrap();
+                }
+        
+                if i % 2 == 0 {
+                    let button = button_out1 | button_out2;
+        
+                    let mut status = status_clone.lock().unwrap();
+                    *status = button;
 
-        if i % 2 == 0 {
-            let button = button_out1 | button_out2;
+                    log::debug!(
+                        "[key] {} {}{}{}{}{}{}", i / 2,
+                        if button & 0x01 != 0 { '^' } else { ' ' },
+                        if button & 0x02 != 0 { '<' } else { ' ' },
+                        if button & 0x04 != 0 { 'v' } else { ' ' },
+                        if button & 0x08 != 0 { '>' } else { ' ' },
+                        if button & 0x10 != 0 { 'A' } else { ' ' },
+                        if button & 0x20 != 0 { 'B' } else { ' ' },
+                    );
 
-            log::info!(
-                "[key] {} {}{}{}{}{}{}", i / 2,
-                if button & 0x01 != 0 { '^' } else { ' ' },
-                if button & 0x02 != 0 { '<' } else { ' ' },
-                if button & 0x04 != 0 { 'v' } else { ' ' },
-                if button & 0x08 != 0 { '>' } else { ' ' },
-                if button & 0x10 != 0 { 'A' } else { ' ' },
-                if button & 0x20 != 0 { 'B' } else { ' ' },
-            );
+                    button_out1 = 0;
+                    button_out2 = 0;
+                }
+        
+                FreeRtos::delay_ms(10);
+        
+                i += 1;
+            }
+        });
+        Ok(())
+    }
 
-            button_out1 = 0;
-            button_out2 = 0;
-        }
-
-        FreeRtos::delay_ms(10);
-
-        i += 1;
+    pub fn get_status(&self) -> u8 {
+        *self.status.lock().unwrap()
     }
 }
 
@@ -188,7 +216,7 @@ fn main() -> anyhow::Result<()> {
     log::info!("Hello, world!");
 
     let peripherals = Peripherals::take()?;
-/*
+
     let led_pins = Leds {
         seg_a: peripherals.pins.gpio21.downgrade_output(),
         seg_b: peripherals.pins.gpio22.downgrade_output(),
@@ -204,21 +232,32 @@ fn main() -> anyhow::Result<()> {
         seg_digit4: peripherals.pins.gpio20.downgrade_output(),
     };
 
-    let key_matrix_pins = KeyMatrix {
+    let key_matrix_pins = KeyMatrixPins {
         key_in1: peripherals.pins.gpio9.downgrade_input(),
         key_in2: peripherals.pins.gpio10.downgrade_input(),
         key_in3: peripherals.pins.gpio8.downgrade_input(),
         key_out1: peripherals.pins.gpio1.downgrade_output(),
         key_out2: peripherals.pins.gpio0.downgrade_output(),
     };
-
+    
+    let key_matrix = Arc::new(Mutex::new(KeyMatrix::new()));
+    let key_matrix_clone = Arc::clone(&key_matrix);
+    
+    key_matrix_clone.lock().unwrap().start_scan(key_matrix_pins)?;
+    
+    loop {
+        let status = key_matrix.lock().unwrap().get_status();
+        
+        //let status = key_matrix.get_status();
+        log::info!("{:02x}", status);
+        
+        FreeRtos::delay_ms(100);
+    }
+    
     let led_handle = thread::spawn(move || run_thread(led_pins));
-    let key_scan_thread_handle = thread::spawn(move || run_key_scan_thread(key_matrix_pins));
-
     let _ = led_handle.join();
-    let _ = key_scan_thread_handle.join();
-*/
 
+/*
     let buzzer_pin = peripherals.pins.gpio4;
     let channel0 = peripherals.ledc.channel0;
     let timer0 = peripherals.ledc.timer0;
@@ -240,6 +279,6 @@ fn main() -> anyhow::Result<()> {
         channel.set_duty(max_duty / 2)?;    // これが音出力のトリガーとなる
         FreeRtos::delay_ms(1000);
     }
-
+*/
     Ok(())
 }
