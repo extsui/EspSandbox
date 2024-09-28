@@ -9,6 +9,9 @@ use esp_idf_hal::peripherals::Peripherals;
 use esp_idf_hal::sys::gpio_set_pull_mode;
 use std::thread;
 
+use esp_idf_hal::ledc::*;
+use esp_idf_hal::prelude::*;
+
 struct Leds {
     seg_a: AnyOutputPin,
     seg_b: AnyOutputPin,
@@ -185,7 +188,7 @@ fn main() -> anyhow::Result<()> {
     log::info!("Hello, world!");
 
     let peripherals = Peripherals::take()?;
-
+/*
     let led_pins = Leds {
         seg_a: peripherals.pins.gpio21.downgrade_output(),
         seg_b: peripherals.pins.gpio22.downgrade_output(),
@@ -214,6 +217,29 @@ fn main() -> anyhow::Result<()> {
 
     let _ = led_handle.join();
     let _ = key_scan_thread_handle.join();
+*/
+
+    let buzzer_pin = peripherals.pins.gpio4;
+    let channel0 = peripherals.ledc.channel0;
+    let timer0 = peripherals.ledc.timer0;
+    
+    let config = &config::TimerConfig::new().resolution(Resolution::Bits10).frequency(1.kHz().into());
+    let mut timer = LedcTimerDriver::new(timer0, config)?;
+
+    let mut channel = LedcDriver::new(
+        channel0,
+        &timer,
+        buzzer_pin,
+    )?;
+
+    let max_duty = channel.get_max_duty();
+    for frequency in [110, 220, 440, 880, 1760].iter().cycle() {
+        log::info!("{}", frequency);
+        timer.set_frequency(frequency.Hz())?;
+
+        channel.set_duty(max_duty / 2)?;    // これが音出力のトリガーとなる
+        FreeRtos::delay_ms(1000);
+    }
 
     Ok(())
 }
