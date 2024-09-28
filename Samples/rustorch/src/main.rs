@@ -74,7 +74,7 @@ impl LedDriver {
                 if i % 100 == 0 {
                     display_number = (display_number + 1) % NUMBER_SEGMENT_TABLE.len();
         
-                    log::info!("[led] {}", i);
+                    log::debug!("[led] {}", i);
                 }
         
                 let bit_pattern = NUMBER_SEGMENT_TABLE[display_number];
@@ -270,16 +270,6 @@ fn main() -> anyhow::Result<()> {
         key_matrix_clone.lock().unwrap().start_scan(key_matrix_pins)?;
     }
     
-    // メインスレッド
-    loop {
-        // ボタン情報取得
-        let status = key_matrix.lock().unwrap().get_status();
-        log::info!("{:02x}", status);
-        
-        FreeRtos::delay_ms(100);
-    }
-
-/*
     let buzzer_pin = peripherals.pins.gpio4;
     let channel0 = peripherals.ledc.channel0;
     let timer0 = peripherals.ledc.timer0;
@@ -294,13 +284,37 @@ fn main() -> anyhow::Result<()> {
     )?;
 
     let max_duty = channel.get_max_duty();
-    for frequency in [110, 220, 440, 880, 1760].iter().cycle() {
-        log::info!("{}", frequency);
-        timer.set_frequency(frequency.Hz())?;
 
-        channel.set_duty(max_duty / 2)?;    // これが音出力のトリガーとなる
-        FreeRtos::delay_ms(1000);
+    // メインスレッド
+    loop {
+        // ボタン情報取得
+        let status = key_matrix.lock().unwrap().get_status();
+        log::info!("{:02x}", status);
+        
+        let frequency = match status {
+            // 同時押しなので優先的に判定
+            0x30 => Some(988),  // B
+            // 以降は単押し判定
+            0x01 => Some(523),  // C
+            0x02 => Some(587),  // D
+            0x04 => Some(659),  // E
+            0x08 => Some(698),  // F
+            0x10 => Some(783),  // G
+            0x20 => Some(880),  // A
+            _ => None,
+        };
+
+        match frequency {
+            Some(value) => {
+                timer.set_frequency(value.Hz())?;
+                channel.set_duty(max_duty / 2)?;    // これが音出力のトリガーとなる
+                timer.resume()?;
+            },
+            None => {
+                timer.pause()?;
+            }
+        }
+        
+        FreeRtos::delay_ms(20);
     }
-*/
-    Ok(())
 }
