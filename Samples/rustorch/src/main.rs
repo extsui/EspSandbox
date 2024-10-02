@@ -308,7 +308,13 @@ fn main() -> anyhow::Result<()> {
         let adc_value = adc.read(&mut adc_pin)?;
         log::info!("[adc] {}", adc_value);
         
-        let frequency = match status {
+        let octave =
+            if      adc_value < 1000 { 0.5 }
+            else if adc_value < 2000 { 1.0 }
+            else if adc_value < 3000 { 2.0 }
+            else                     { 4.0 };
+        
+        let frequency_base = match status {
             // 同時押しなので優先的に判定
             0x30 => Some(988),  // B
             // 以降は単押し判定
@@ -321,9 +327,10 @@ fn main() -> anyhow::Result<()> {
             _ => None,
         };
 
-        match frequency {
+        match frequency_base {
             Some(value) => {
-                timer.set_frequency(value.Hz())?;
+                let frequency = (value as f32 * octave) as u32;
+                timer.set_frequency(frequency.Hz())?;
                 channel.set_duty(max_duty / 2)?;    // これが音出力のトリガーとなる
                 timer.resume()?;
             },
