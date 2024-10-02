@@ -10,7 +10,12 @@ use esp_idf_hal::sys::gpio_set_pull_mode;
 use std::thread;
 use std::sync::{Arc, Mutex};
 use esp_idf_hal::ledc::*;
+use esp_idf_hal::ledc::config::TimerConfig;
 use esp_idf_hal::prelude::*;
+use esp_idf_hal::adc::attenuation::DB_11;
+use esp_idf_hal::adc::oneshot::*;
+use esp_idf_hal::adc::oneshot::AdcChannelDriver;
+use esp_idf_hal::adc::oneshot::config::AdcChannelConfig;
 
 struct LedPins {
     seg_a: AnyOutputPin,
@@ -274,8 +279,8 @@ fn main() -> anyhow::Result<()> {
     let channel0 = peripherals.ledc.channel0;
     let timer0 = peripherals.ledc.timer0;
     
-    let config = &config::TimerConfig::new().resolution(Resolution::Bits10).frequency(1.kHz().into());
-    let mut timer = LedcTimerDriver::new(timer0, config)?;
+    let timer_config = &TimerConfig::new().resolution(Resolution::Bits10).frequency(1.kHz().into());
+    let mut timer = LedcTimerDriver::new(timer0, timer_config)?;
 
     let mut channel = LedcDriver::new(
         channel0,
@@ -285,11 +290,23 @@ fn main() -> anyhow::Result<()> {
 
     let max_duty = channel.get_max_duty();
 
+    // ADC 関連
+    let adc = AdcDriver::new(peripherals.adc1)?;
+    let adc_config = AdcChannelConfig {
+        attenuation: DB_11,
+        calibration: true,
+        ..Default::default()
+    };
+    let mut adc_pin = AdcChannelDriver::new(&adc, peripherals.pins.gpio5, &adc_config)?;
+
     // メインスレッド
     loop {
         // ボタン情報取得
         let status = key_matrix.lock().unwrap().get_status();
-        log::info!("{:02x}", status);
+        log::info!("[btn] {:02x}", status);
+
+        let adc_value = adc.read(&mut adc_pin)?;
+        log::info!("[adc] {}", adc_value);
         
         let frequency = match status {
             // 同時押しなので優先的に判定
