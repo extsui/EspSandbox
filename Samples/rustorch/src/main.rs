@@ -32,19 +32,19 @@ struct LedPins {
     seg_digit4: AnyOutputPin,
 }
 
-#[derive(Clone, Copy)]
 struct LedDriver {
-    data: [u8; 4],
+    display_data: Arc<Mutex<[u8; 4]>>,
 }
 
 impl LedDriver {
     pub fn new() -> Self {
         LedDriver {
-            data: [ 0x00, 0x00, 0x00, 0x00 ],
+            display_data: Arc::new(Mutex::new([ 0, 0, 0, 0 ])),
         }
     }
 
-    pub fn start_dynamic_lighting(self, pins: LedPins) -> anyhow::Result<()> {
+    pub fn start_dynamic_lighting(&mut self, pins: LedPins) -> anyhow::Result<()> {
+        let display_data_clone = Arc::clone(&self.display_data);
         let _ = thread::spawn(move || -> anyhow::Result<()> {
             let mut seg_a = PinDriver::output(pins.seg_a)?;
             let mut seg_b = PinDriver::output(pins.seg_b)?;
@@ -59,30 +59,9 @@ impl LedDriver {
             let mut seg_digit3 = PinDriver::output(pins.seg_digit3)?;
             let mut seg_digit4 = PinDriver::output(pins.seg_digit4)?;
         
-            const NUMBER_SEGMENT_TABLE: [u8; 10] = [
-                0xFC,   // 0
-                0x60,   // 1
-                0xDA,   // 2
-                0xF2,   // 3
-                0x66,   // 4
-                0xB6,   // 5
-                0xBE,   // 6
-                0xE4,   // 7
-                0xFE,   // 8
-                0xF6,   // 9
-            ];
-        
-            let mut display_number = 0;
-        
             let mut i = 0;
             loop {
-                if i % 100 == 0 {
-                    display_number = (display_number + 1) % NUMBER_SEGMENT_TABLE.len();
-        
-                    log::debug!("[led] {}", i);
-                }
-        
-                let bit_pattern = NUMBER_SEGMENT_TABLE[display_number];
+                let bit_pattern = display_data_clone.lock().unwrap()[(i % 4) as usize];
                 if (bit_pattern & ((1 as u8) << 7)) != 0 { seg_a.set_high()? } else { seg_a.set_low()?; }
                 if (bit_pattern & ((1 as u8) << 6)) != 0 { seg_b.set_high()? } else { seg_b.set_low()?; }
                 if (bit_pattern & ((1 as u8) << 5)) != 0 { seg_c.set_high()? } else { seg_c.set_low()?; }
@@ -116,8 +95,8 @@ impl LedDriver {
         Ok(())
     }
 
-    pub fn write(self, data: [u8; 4]) {
-        // TODO:
+    pub fn write(&mut self, data: [u8; 4]) {
+        *self.display_data.lock().unwrap() = data;
     }
 }
 
@@ -326,6 +305,30 @@ fn main() -> anyhow::Result<()> {
             0x20 => Some(880),  // A
             _ => None,
         };
+
+        const NUMBER_SEGMENT_TABLE: [u8; 10] = [
+            0xFC,   // 0
+            0x60,   // 1
+            0xDA,   // 2
+            0xF2,   // 3
+            0x66,   // 4
+            0xB6,   // 5
+            0xBE,   // 6
+            0xE4,   // 7
+            0xFE,   // 8
+            0xF6,   // 9
+        ];
+        let mut display_data = [
+            NUMBER_SEGMENT_TABLE[(adc_value / 1000 % 10) as usize],
+            NUMBER_SEGMENT_TABLE[(adc_value / 100  % 10) as usize],
+            NUMBER_SEGMENT_TABLE[(adc_value / 10   % 10) as usize],
+            NUMBER_SEGMENT_TABLE[(adc_value / 1    % 10) as usize],
+        ];
+        if      adc_value < 10   { display_data[0..3].fill(0); }
+        else if adc_value < 100  { display_data[0..2].fill(0); }
+        else if adc_value < 1000 { display_data[0..1].fill(0); }
+
+        led_driver.lock().unwrap().write(display_data);
 
         match frequency_base {
             Some(value) => {
