@@ -13,7 +13,18 @@ use esp_idf_hal::adc::oneshot::config::AdcChannelConfig;
 
 use esp_idf_hal::i2c::I2cConfig;
 use esp_idf_hal::i2c::I2cDriver;
-use ssd1306::{prelude::*, I2CDisplayInterface, Ssd1306};
+
+use embedded_graphics::{
+    mono_font::{ascii::FONT_6X10, MonoTextStyleBuilder},
+    pixelcolor::BinaryColor,
+    prelude::*,
+    text::{Baseline, Text},
+};
+use ssd1306::{
+    prelude::*,
+    I2CDisplayInterface,
+    Ssd1306
+};
 
 mod key_matrix;
 use key_matrix::KeyMatrix;
@@ -80,15 +91,21 @@ fn main() -> anyhow::Result<()> {
         .into_buffered_graphics_mode();
     display.init().unwrap();
 
-    // 適当なパターン表示
-    let mut buffer: [u8; 128 * 8] = [0u8; 128 * 8];
-    for y in 0..8 {
-        for x in 0..128 {
-            buffer[y * 128 + x] = ((x as u8) & 0b1111_1000_u8) | (y as u8);
-        }
-    }
-    display.draw(&buffer).unwrap();
-    
+    let text_style = MonoTextStyleBuilder::new()
+        .font(&FONT_6X10)
+        .text_color(BinaryColor::On)
+        .build();
+
+    Text::with_baseline("Hello world!", Point::zero(), text_style, Baseline::Top)
+        .draw(&mut display)
+        .unwrap();
+
+    Text::with_baseline("Hello Rust!", Point::new(0, 16), text_style, Baseline::Top)
+        .draw(&mut display)
+        .unwrap();
+
+    display.flush().unwrap();
+
     let buzzer_pin = peripherals.pins.gpio4;
     let channel0 = peripherals.ledc.channel0;
     let timer0 = peripherals.ledc.timer0;

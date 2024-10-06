@@ -33,6 +33,7 @@ esp-idf-svc = { version = "0.49", default-features = false }
 esp-idf-hal = "0.44.0"
 anyhow = "1.0.86"
 ssd1306 = "0.9.0"
+embedded-graphics = "0.8.1"
 
 [build-dependencies]
 embuild = "0.32.0"
