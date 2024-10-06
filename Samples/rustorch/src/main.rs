@@ -11,6 +11,10 @@ use esp_idf_hal::adc::oneshot::*;
 use esp_idf_hal::adc::oneshot::AdcChannelDriver;
 use esp_idf_hal::adc::oneshot::config::AdcChannelConfig;
 
+use esp_idf_hal::i2c::I2cConfig;
+use esp_idf_hal::i2c::I2cDriver;
+use ssd1306::{prelude::*, I2CDisplayInterface, Ssd1306};
+
 mod key_matrix;
 use key_matrix::KeyMatrix;
 use key_matrix::KeyMatrixPins;
@@ -63,6 +67,27 @@ fn main() -> anyhow::Result<()> {
         let key_matrix_clone = Arc::clone(&key_matrix);
         key_matrix_clone.lock().unwrap().start_scan(key_matrix_pins)?;
     }
+    
+    let i2c0 = peripherals.i2c0;
+    let sda = peripherals.pins.gpio6;
+    let scl = peripherals.pins.gpio7;
+
+    let i2c_config = I2cConfig::new().baudrate(400.kHz().into()).scl_enable_pullup(false).sda_enable_pullup(false);
+    let i2c = I2cDriver::new(i2c0, sda, scl, &i2c_config)?;
+
+    let i2c_interface = I2CDisplayInterface::new(i2c);
+    let mut display = Ssd1306::new(i2c_interface, DisplaySize128x64, DisplayRotation::Rotate0)
+        .into_buffered_graphics_mode();
+    display.init().unwrap();
+
+    // 適当なパターン表示
+    let mut buffer: [u8; 128 * 8] = [0u8; 128 * 8];
+    for y in 0..8 {
+        for x in 0..128 {
+            buffer[y * 128 + x] = ((x as u8) & 0b1111_1000_u8) | (y as u8);
+        }
+    }
+    display.draw(&buffer).unwrap();
     
     let buzzer_pin = peripherals.pins.gpio4;
     let channel0 = peripherals.ledc.channel0;
