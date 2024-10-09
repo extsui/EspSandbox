@@ -91,20 +91,32 @@ fn main() -> anyhow::Result<()> {
         .into_buffered_graphics_mode();
     display.init().unwrap();
 
+    display.clear(BinaryColor::On).unwrap();
+    display.flush().unwrap();
+
     let text_style = MonoTextStyleBuilder::new()
         .font(&FONT_6X10)
         .text_color(BinaryColor::On)
         .build();
 
-    Text::with_baseline("Hello world!", Point::zero(), text_style, Baseline::Top)
-        .draw(&mut display)
-        .unwrap();
+    let _ = std::thread::spawn(move || {
+        loop {
+            // ESP 環境では std::time::Instant::now() で起動してからの時刻を取得できなかった
+            let uptime_us = unsafe { esp_idf_sys::esp_timer_get_time() };
+            let text = format!("{} [ms]", uptime_us / 1000);
 
-    Text::with_baseline("Hello Rust!", Point::new(0, 16), text_style, Baseline::Top)
-        .draw(&mut display)
-        .unwrap();
+            println!("{}", text);
 
-    display.flush().unwrap();
+            Text::with_baseline(&text, Point::new(0, 0), text_style, Baseline::Top)
+            .draw(&mut display)
+            .unwrap();
+        
+            display.flush().unwrap();
+            
+            FreeRtos::delay_ms(30);
+            display.clear(BinaryColor::Off).unwrap();
+        }
+    });
 
     let buzzer_pin = peripherals.pins.gpio4;
     let channel0 = peripherals.ledc.channel0;

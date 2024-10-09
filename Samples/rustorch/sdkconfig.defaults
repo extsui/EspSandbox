@@ -1,5 +1,9 @@
 # Rust often needs a bit of an extra main task stack size compared to C (the default is 3K)
-CONFIG_ESP_MAIN_TASK_STACK_SIZE=8000
+CONFIG_ESP_MAIN_TASK_STACK_SIZE=8192
+
+# デフォルトは 3KiB で、4KiB だとスタックオーバーフローが発生、6KiB だと動作した
+# embedded-graphics および ssd1306 用のスレッドがかなりのスタックを消費していそう (要調査)
+CONFIG_PTHREAD_TASK_STACK_SIZE_DEFAULT=6144
 
 # Use this to set FreeRTOS kernel tick frequency to 1000 Hz (100 Hz by default).
 # This allows to use 1 ms granularity for thread sleeps (10 ms by default).
