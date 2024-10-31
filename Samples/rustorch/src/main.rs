@@ -78,7 +78,9 @@ fn main() -> anyhow::Result<()> {
         let key_matrix_clone = Arc::clone(&key_matrix);
         key_matrix_clone.lock().unwrap().start_scan(key_matrix_pins)?;
     }
-    
+/*
+    // OLED 関連
+
     let i2c0 = peripherals.i2c0;
     let sda = peripherals.pins.gpio6;
     let scl = peripherals.pins.gpio7;
@@ -117,7 +119,7 @@ fn main() -> anyhow::Result<()> {
             display.clear(BinaryColor::Off).unwrap();
         }
     });
-
+*/
     let buzzer_pin = peripherals.pins.gpio4;
     let channel0 = peripherals.ledc.channel0;
     let timer0 = peripherals.ledc.timer0;
@@ -141,6 +143,9 @@ fn main() -> anyhow::Result<()> {
         ..Default::default()
     };
     let mut adc_pin = AdcChannelDriver::new(&adc, peripherals.pins.gpio5, &adc_config)?;
+
+/*
+    // TODO: モード選択を実装して ToyPiano モードで↓が実行されるようにする
 
     // メインスレッド
     loop {
@@ -207,5 +212,51 @@ fn main() -> anyhow::Result<()> {
         }
         
         FreeRtos::delay_ms(20);
+    }
+*/
+
+    // フレームの概念を導入する
+    const MICRO_SECONDS_PER_FRAME : i64 = 16667;
+    let mut next_frame_time_us = unsafe { esp_idf_sys::esp_timer_get_time() } + MICRO_SECONDS_PER_FRAME;
+
+    let mut frame_count = 0u64;
+
+    loop {
+        //let key_status = key_matrix.lock().unwrap().get_status();
+        //let adc_value = adc.read(&mut adc_pin)?;
+
+        const NUMBER_SEGMENT_TABLE: [u8; 10] = [
+            0xFC,   // 0
+            0x60,   // 1
+            0xDA,   // 2
+            0xF2,   // 3
+            0x66,   // 4
+            0xB6,   // 5
+            0xBE,   // 6
+            0xE4,   // 7
+            0xFE,   // 8
+            0xF6,   // 9
+        ];
+        let display_data = [
+            NUMBER_SEGMENT_TABLE[(frame_count / 1000 % 10) as usize],
+            NUMBER_SEGMENT_TABLE[(frame_count / 100  % 10) as usize],
+            NUMBER_SEGMENT_TABLE[(frame_count / 10   % 10) as usize],
+            NUMBER_SEGMENT_TABLE[(frame_count / 1    % 10) as usize],
+        ];
+        led_driver.lock().unwrap().write(display_data);
+
+        // 次のフレームまで待つ
+        loop {
+            let current_time_us = unsafe { esp_idf_sys::esp_timer_get_time() };
+            if current_time_us >= next_frame_time_us {
+                next_frame_time_us += MICRO_SECONDS_PER_FRAME;
+
+                println!("{:?}", next_frame_time_us / 1000);
+                break;
+            }
+            // WDT クリアのために必要
+            FreeRtos::delay_ms(1);
+        }
+        frame_count += 1;
     }
 }
