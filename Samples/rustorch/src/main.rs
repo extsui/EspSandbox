@@ -29,6 +29,7 @@ use ssd1306::{
 mod key_matrix;
 use key_matrix::KeyMatrix;
 use key_matrix::KeyMatrixPins;
+use key_matrix::Button;
 
 mod led_driver;
 use led_driver::LedDriver;
@@ -162,16 +163,17 @@ fn main() -> anyhow::Result<()> {
             else if adc_value < 3000 { 2.0 }
             else                     { 4.0 };
         
+        // ボタンが 6 個しかないのでシを AB 同時押しで表現する
         let frequency_base = match status {
             // 同時押しなので優先的に判定
-            0x30 => Some(988),  // B
+            _ if status == Button::B | Button::A => Some(988),  // B
             // 以降は単押し判定
-            0x01 => Some(523),  // C
-            0x02 => Some(587),  // D
-            0x04 => Some(659),  // E
-            0x08 => Some(698),  // F
-            0x10 => Some(783),  // G
-            0x20 => Some(880),  // A
+            _ if status == Button::UP    => Some(523),  // C
+            _ if status == Button::LEFT  => Some(587),  // D
+            _ if status == Button::DOWN  => Some(659),  // E
+            _ if status == Button::RIGHT => Some(698),  // F
+            _ if status == Button::B     => Some(783),  // G
+            _ if status == Button::A     => Some(880),  // A
             _ => None,
         };
 

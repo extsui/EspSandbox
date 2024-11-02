@@ -15,6 +15,16 @@ pub struct KeyMatrixPins {
     pub key_out2: AnyOutputPin,
 }
 
+pub struct Button;
+impl Button {
+    pub const UP:    u8 = 0x01;
+    pub const LEFT:  u8 = 0x02;
+    pub const DOWN:  u8 = 0x04;
+    pub const RIGHT: u8 = 0x08;
+    pub const A:     u8 = 0x10;
+    pub const B:     u8 = 0x20;
+}
+
 pub struct KeyMatrix {
     status: Arc<Mutex<u8>>,
     is_scanning: bool,
@@ -55,14 +65,6 @@ impl KeyMatrix {
             out1.set_high()?;
             out2.set_low()?;
         
-            // 0: UP 
-            // 1: LEFT
-            // 2: DOWN
-            // 3: RIGHT
-            // 4: A
-            // 5: B
-            // 6: -
-            // 7: -
             let mut button_out1: u8 = 0x00;
             let mut button_out2: u8 = 0x00;
         
@@ -70,15 +72,15 @@ impl KeyMatrix {
                 // 出力端子切り替えから入力端子が安定するまでにある程度時間がかかるはずなので
                 // 「出力端子切り替え -> ポーリング周期時間分ウェイト -> (ループ先頭) 入力取得」とする
                 if i % 2 == 0 {
-                    if in1.is_low() { button_out1 |= 0x01 as u8; }   // SW_UP
-                    if in2.is_low() { button_out1 |= 0x08 as u8; }   // SW_RIGHT
-                    if in3.is_low() { button_out1 |= 0x10 as u8; }   // SW_A
+                    if in1.is_low() { button_out1 |= Button::UP; }
+                    if in2.is_low() { button_out1 |= Button::RIGHT; }
+                    if in3.is_low() { button_out1 |= Button::B; }
                     out1.set_high().unwrap();
                     out2.set_low().unwrap();
                 } else {
-                    if in1.is_low() { button_out2 |= 0x02 as u8; }   // SW_LEFT
-                    if in2.is_low() { button_out2 |= 0x04 as u8; }   // SW_DOWN
-                    if in3.is_low() { button_out2 |= 0x20 as u8; }   // SW_B
+                    if in1.is_low() { button_out2 |= Button::LEFT; }
+                    if in2.is_low() { button_out2 |= Button::DOWN; }
+                    if in3.is_low() { button_out2 |= Button::A; }
                     out1.set_low().unwrap();
                     out2.set_high().unwrap();
                 }
@@ -91,12 +93,12 @@ impl KeyMatrix {
 
                     log::debug!(
                         "[key] {} {}{}{}{}{}{}", i / 2,
-                        if button & 0x01 != 0 { '^' } else { ' ' },
-                        if button & 0x02 != 0 { '<' } else { ' ' },
-                        if button & 0x04 != 0 { 'v' } else { ' ' },
-                        if button & 0x08 != 0 { '>' } else { ' ' },
-                        if button & 0x10 != 0 { 'A' } else { ' ' },
-                        if button & 0x20 != 0 { 'B' } else { ' ' },
+                        if button & Button::UP    != 0 { '^' } else { ' ' },
+                        if button & Button::LEFT  != 0 { '<' } else { ' ' },
+                        if button & Button::DOWN  != 0 { 'v' } else { ' ' },
+                        if button & Button::RIGHT != 0 { '>' } else { ' ' },
+                        if button & Button::A     != 0 { 'A' } else { ' ' },
+                        if button & Button::B     != 0 { 'B' } else { ' ' },
                     );
 
                     button_out1 = 0;
