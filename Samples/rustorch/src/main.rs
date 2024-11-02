@@ -121,6 +121,7 @@ fn main() -> anyhow::Result<()> {
         }
     });
 */
+/*
     let buzzer_pin = peripherals.pins.gpio4;
     let channel0 = peripherals.ledc.channel0;
     let timer0 = peripherals.ledc.timer0;
@@ -144,7 +145,7 @@ fn main() -> anyhow::Result<()> {
         ..Default::default()
     };
     let mut adc_pin = AdcChannelDriver::new(&adc, peripherals.pins.gpio5, &adc_config)?;
-
+*/
 /*
     // TODO: モード選択を実装して ToyPiano モードで↓が実行されるようにする
 
@@ -223,37 +224,161 @@ fn main() -> anyhow::Result<()> {
 
     let mut frame_count = 0u64;
 
+    enum State {
+        // [---] 起動状態
+        Startup,
+        // [***] 回転中
+        Rolling,
+        // [nnn] 全桁確定 (再開待ち)
+        Fixed,
+    }
+
+    // TODO: 最終的にモジュール化が必要 (pub を要削除)
+    struct SlotMachine {
+        pub state: State,
+        // 何桁目まで確定したか
+        pub fixed_digit_count: u8,
+        // 各桁の数字の内部カウンタ、7セグの回転表示に使用
+        pub internal_number: [u32; 3],
+        // 確定された数字の格納先
+        pub fixed_number: [u8; 3],
+    }
+
+    impl SlotMachine {
+        pub fn new() -> Self {
+            SlotMachine {
+                state: State::Startup,
+                fixed_digit_count: 0,
+                internal_number: Default::default(),
+                fixed_number: Default::default(),
+            }
+        }
+
+        /*
+        // TODO: 最終的にモジュール化が必要
+
+        // フレーム毎に呼び出される処理
+        pub fn update(&self, ) {
+
+        }
+        */
+    }
+
+    let mut slot_machine = SlotMachine::new();
+
     loop {
-        //let key_status = key_matrix.lock().unwrap().get_status();
         //let adc_value = adc.read(&mut adc_pin)?;
 
-        const NUMBER_SEGMENT_TABLE: [u8; 10] = [
-            0xFC,   // 0
-            0x60,   // 1
-            0xDA,   // 2
-            0xF2,   // 3
-            0x66,   // 4
-            0xB6,   // 5
-            0xBE,   // 6
-            0xE4,   // 7
-            0xFE,   // 8
-            0xF6,   // 9
-        ];
-        let display_data = [
-            NUMBER_SEGMENT_TABLE[(frame_count / 1000 % 10) as usize],
-            NUMBER_SEGMENT_TABLE[(frame_count / 100  % 10) as usize],
-            NUMBER_SEGMENT_TABLE[(frame_count / 10   % 10) as usize],
-            NUMBER_SEGMENT_TABLE[(frame_count / 1    % 10) as usize],
-        ];
-        led_driver.lock().unwrap().write(display_data);
+        let released_button = key_matrix.lock().unwrap().was_released(Button::MASK);
+        let was_rolling_started = released_button & Button::A != 0x00;
+        let was_number_selected = released_button & Button::B != 0x00;
+
+        const ANIMATION_DELAY_PARAM: u32 = 7;
+
+        match slot_machine.state {
+            State::Startup => {
+                if was_rolling_started {
+                    slot_machine.state = State::Rolling;
+                    slot_machine.fixed_digit_count = 0;
+                    slot_machine.fixed_number = Default::default();
+                    slot_machine.internal_number = Default::default();
+                    println!("-> Rolling");
+                }
+            },
+            State::Rolling => {
+                if was_number_selected {
+                    // 桁確定処理
+                    let index = slot_machine.fixed_digit_count as usize;
+                    // TODO: 内部数値から確定数値への変換処理を仕上げる (演出関連)
+                    slot_machine.fixed_number[index] = (slot_machine.internal_number[index] / ANIMATION_DELAY_PARAM) as u8;    // TORIAEZU:
+                    slot_machine.fixed_digit_count += 1;
+
+                    println!("fixed_digit_count : {} -> {}", index, index + 1);
+                }
+
+                // 定常処理
+
+                // 内部数値のカウントアップ処理
+                // TODO: 要パラメータ調整
+                for value in slot_machine.internal_number.iter_mut() {
+                    *value += 1;
+                    if *value >= ANIMATION_DELAY_PARAM * 10 {
+                        *value = 0;
+                    }
+                }
+
+                const NUMBER_SEGMENT_TABLE: [u8; 10] = [
+                    0xFC,   // 0
+                    0x60,   // 1
+                    0xDA,   // 2
+                    0xF2,   // 3
+                    0x66,   // 4
+                    0xB6,   // 5
+                    0xBE,   // 6
+                    0xE4,   // 7
+                    0xFE,   // 8
+                    0xF6,   // 9
+                ];
+
+                // TODO: もっとスマートに書けるはず
+                let display_data = match slot_machine.fixed_digit_count {
+                    0 => {
+                        [
+                            NUMBER_SEGMENT_TABLE[(slot_machine.internal_number[0] / ANIMATION_DELAY_PARAM) as usize],
+                            NUMBER_SEGMENT_TABLE[(slot_machine.internal_number[1] / ANIMATION_DELAY_PARAM) as usize],
+                            NUMBER_SEGMENT_TABLE[(slot_machine.internal_number[2] / ANIMATION_DELAY_PARAM) as usize],
+                            0,
+                        ]
+                    }
+                    1 => {
+                        [
+                            NUMBER_SEGMENT_TABLE[slot_machine.fixed_number[0] as usize],
+                            NUMBER_SEGMENT_TABLE[(slot_machine.internal_number[1] / ANIMATION_DELAY_PARAM) as usize],
+                            NUMBER_SEGMENT_TABLE[(slot_machine.internal_number[2] / ANIMATION_DELAY_PARAM) as usize],
+                            0,
+                        ]
+                    }
+                    2 => {
+                        [
+                            NUMBER_SEGMENT_TABLE[slot_machine.fixed_number[0] as usize],
+                            NUMBER_SEGMENT_TABLE[slot_machine.fixed_number[1] as usize],
+                            NUMBER_SEGMENT_TABLE[(slot_machine.internal_number[2] / ANIMATION_DELAY_PARAM) as usize],
+                            0,
+                        ]
+                    }
+                    3 => {
+                        // 全桁確定
+                        [
+                            NUMBER_SEGMENT_TABLE[slot_machine.fixed_number[0] as usize],
+                            NUMBER_SEGMENT_TABLE[slot_machine.fixed_number[1] as usize],
+                            NUMBER_SEGMENT_TABLE[slot_machine.fixed_number[2] as usize],
+                            0,
+                        ]
+                    }
+                    _ => {
+                        panic!();
+                    }
+                };
+                led_driver.lock().unwrap().write(display_data);
+
+                if slot_machine.fixed_digit_count == 3 {
+                    slot_machine.state = State::Fixed;
+                    println!("-> Fixed");
+                }
+            },
+            State::Fixed => {
+                // TODO: 結果に対して何かしらのアニメーションさせる?
+                // TORIAEZU: 現状は NOP で遷移
+                slot_machine.state = State::Startup;
+                println!("-> Startup");
+            },
+        }
 
         // 次のフレームまで待つ
         loop {
             let current_time_us = unsafe { esp_idf_sys::esp_timer_get_time() };
             if current_time_us >= next_frame_time_us {
                 next_frame_time_us += MICRO_SECONDS_PER_FRAME;
-
-                println!("{:?}", next_frame_time_us / 1000);
                 break;
             }
             // WDT クリアのために必要
