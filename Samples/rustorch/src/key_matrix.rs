@@ -23,17 +23,22 @@ impl Button {
     pub const RIGHT: u8 = 0x08;
     pub const A:     u8 = 0x10;
     pub const B:     u8 = 0x20;
+    pub const MASK:  u8 = 0x3F; // マスク操作用
 }
 
+const KEY_STATUS_HISTORY_COUNT: usize = 3;
+
 pub struct KeyMatrix {
-    status: Arc<Mutex<u8>>,
+    status: Arc<Mutex<[u8; KEY_STATUS_HISTORY_COUNT]>>,
+    released_event: Arc<Mutex<u8>>,
     is_scanning: bool,
 }
 
 impl KeyMatrix {
     pub fn new() -> Self {
         KeyMatrix {
-            status: Arc::new(Mutex::new(0)),
+            status: Arc::new(Mutex::new(Default::default())),
+            released_event: Arc::new(Mutex::new(0)),
             is_scanning: false,
         }
     }
@@ -43,6 +48,7 @@ impl KeyMatrix {
         self.is_scanning = true;
 
         let status_clone = Arc::clone(&self.status);
+        let released_event_clone = Arc::clone(&self.released_event);
 
         let _ = thread::spawn(move || -> anyhow::Result<()> {
             let in1 = PinDriver::input(pins.key_in1)?;
@@ -87,10 +93,21 @@ impl KeyMatrix {
         
                 if i % 2 == 0 {
                     let button = button_out1 | button_out2;
-        
+                    button_out1 = 0;
+                    button_out2 = 0;
+                    
+                    // インデックスが小さい方が新しい要素
                     let mut status = status_clone.lock().unwrap();
-                    *status = button;
-
+                    status.copy_within(0..KEY_STATUS_HISTORY_COUNT-1, 1);
+                    status[0] = button;
+                    
+                    // 1 -> 1 -> 0 で離し検出
+                    // 一度成立したらイベントを取得されるまでは有効のまま維持
+                    let mut released_event = released_event_clone.lock().unwrap();
+                    *released_event |= (!&status[0] & Button::MASK) &
+                                       ( &status[1] & Button::MASK) &
+                                       ( &status[2] & Button::MASK);
+                    
                     log::debug!(
                         "[key] {} {}{}{}{}{}{}", i / 2,
                         if button & Button::UP    != 0 { '^' } else { ' ' },
@@ -100,12 +117,12 @@ impl KeyMatrix {
                         if button & Button::A     != 0 { 'A' } else { ' ' },
                         if button & Button::B     != 0 { 'B' } else { ' ' },
                     );
-
-                    button_out1 = 0;
-                    button_out2 = 0;
+                    log::debug!("[{:02x}, {:02x}, {:02x}] -> {:02x}",
+                        status[0], status[1], status[2], *released_event);
                 }
         
-                FreeRtos::delay_ms(10);
+                // OUT 信号線が 2 本なのでキースキャン周期は delay_ms の倍であることに注意
+                FreeRtos::delay_ms(5);
         
                 i += 1;
             }
@@ -113,7 +130,18 @@ impl KeyMatrix {
         Ok(())
     }
 
+    // ボタンの現在の状態を取得する
     pub fn get_status(&self) -> u8 {
-        *self.status.lock().unwrap()
+        self.status.lock().unwrap()[0]
     }
+
+    // ボタンが押されて離されていたら true
+    // 指定したボタンの情報は一度読み出すとクリアされる
+    pub fn was_released(&self, button_mask: u8) -> u8 {
+        let mut released_event = self.released_event.lock().unwrap();
+        let released_event_masked = *released_event & button_mask;
+        *released_event = 0;
+        released_event_masked
+    }
+
 }
