@@ -273,7 +273,7 @@ fn main() -> anyhow::Result<()> {
         let was_rolling_started = released_button & Button::A != 0x00;
         let was_number_selected = released_button & Button::B != 0x00;
 
-        const ANIMATION_DELAY_PARAM: u32 = 7;
+        const ANIMATION_DELAY_PARAM: u32 = 5;   // TORIAEZU:
 
         match slot_machine.state {
             State::Startup => {
@@ -290,7 +290,7 @@ fn main() -> anyhow::Result<()> {
                     // 桁確定処理
                     let index = slot_machine.fixed_digit_count as usize;
                     // TODO: 内部数値から確定数値への変換処理を仕上げる (演出関連)
-                    slot_machine.fixed_number[index] = (slot_machine.internal_number[index] / ANIMATION_DELAY_PARAM) as u8;    // TORIAEZU:
+                    slot_machine.fixed_number[index] = (slot_machine.internal_number[index] / ANIMATION_DELAY_PARAM / 6) as u8;    // TORIAEZU:
                     slot_machine.fixed_digit_count += 1;
 
                     println!("fixed_digit_count : {} -> {}", index, index + 1);
@@ -302,7 +302,7 @@ fn main() -> anyhow::Result<()> {
                 // TODO: 要パラメータ調整
                 for value in slot_machine.internal_number.iter_mut() {
                     *value += 1;
-                    if *value >= ANIMATION_DELAY_PARAM * 10 {
+                    if *value >= ANIMATION_DELAY_PARAM * 10 * 6 {
                         *value = 0;
                     }
                 }
@@ -320,45 +320,32 @@ fn main() -> anyhow::Result<()> {
                     0xF6,   // 9
                 ];
 
-                // TODO: もっとスマートに書けるはず
-                let display_data = match slot_machine.fixed_digit_count {
-                    0 => {
-                        [
-                            NUMBER_SEGMENT_TABLE[(slot_machine.internal_number[0] / ANIMATION_DELAY_PARAM) as usize],
-                            NUMBER_SEGMENT_TABLE[(slot_machine.internal_number[1] / ANIMATION_DELAY_PARAM) as usize],
-                            NUMBER_SEGMENT_TABLE[(slot_machine.internal_number[2] / ANIMATION_DELAY_PARAM) as usize],
-                            0,
-                        ]
-                    }
-                    1 => {
-                        [
-                            NUMBER_SEGMENT_TABLE[slot_machine.fixed_number[0] as usize],
-                            NUMBER_SEGMENT_TABLE[(slot_machine.internal_number[1] / ANIMATION_DELAY_PARAM) as usize],
-                            NUMBER_SEGMENT_TABLE[(slot_machine.internal_number[2] / ANIMATION_DELAY_PARAM) as usize],
-                            0,
-                        ]
-                    }
-                    2 => {
-                        [
-                            NUMBER_SEGMENT_TABLE[slot_machine.fixed_number[0] as usize],
-                            NUMBER_SEGMENT_TABLE[slot_machine.fixed_number[1] as usize],
-                            NUMBER_SEGMENT_TABLE[(slot_machine.internal_number[2] / ANIMATION_DELAY_PARAM) as usize],
-                            0,
-                        ]
-                    }
-                    3 => {
-                        // 全桁確定
-                        [
-                            NUMBER_SEGMENT_TABLE[slot_machine.fixed_number[0] as usize],
-                            NUMBER_SEGMENT_TABLE[slot_machine.fixed_number[1] as usize],
-                            NUMBER_SEGMENT_TABLE[slot_machine.fixed_number[2] as usize],
-                            0,
-                        ]
-                    }
-                    _ => {
-                        panic!();
-                    }
-                };
+                const NUMBER_SEGMENT_SLOT_TABLE: [[u8; 6]; 10] = [
+                    [ 0x3A, 0x10, 0x00, 0x80, 0x46, 0xFD ],
+                    [ 0x2A, 0x10, 0x00, 0x00, 0x40, 0x61 ],
+                    [ 0x20, 0x00, 0x00, 0x80, 0x86, 0xDB ],
+                    [ 0x32, 0x10, 0x00, 0x80, 0xC2, 0xF3 ],
+                    [ 0x32, 0x10, 0x00, 0x00, 0xC0, 0x67 ],
+                    [ 0x38, 0x00, 0x00, 0x80, 0xC2, 0xB7 ],
+                    [ 0x1A, 0x10, 0x00, 0x80, 0xC6, 0xBF ],
+                    [ 0x1A, 0x10, 0x00, 0x00, 0x40, 0xE5 ],
+                    [ 0x2A, 0x10, 0x00, 0x80, 0xC6, 0xFF ],
+                    [ 0x3A, 0x10, 0x00, 0x80, 0xC2, 0xF7 ],
+                ];
+
+                // 確定済み桁はその数字を表示、未確定の桁は遷移中のパターンを表示
+                let mut display_data = [0u8; 4];
+                for i in 0..display_data.len()-1 {
+                    display_data[i] = if i < (slot_machine.fixed_digit_count as usize) {
+                        let number_index = slot_machine.fixed_number[i] as usize;
+                        NUMBER_SEGMENT_TABLE[number_index]
+                    } else {
+                        let number_index    = (slot_machine.internal_number[i] / ANIMATION_DELAY_PARAM / 6) as usize;
+                        let animation_index = (slot_machine.internal_number[i] / ANIMATION_DELAY_PARAM % 6) as usize;
+                        NUMBER_SEGMENT_SLOT_TABLE[number_index][animation_index]
+                    };
+                }
+
                 led_driver.lock().unwrap().write(display_data);
 
                 if slot_machine.fixed_digit_count == 3 {
