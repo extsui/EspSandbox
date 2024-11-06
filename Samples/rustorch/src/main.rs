@@ -266,14 +266,44 @@ fn main() -> anyhow::Result<()> {
 
     let mut slot_machine = SlotMachine::new();
 
+    let mut animation_delay_param: u32 = 5; // TORIAEZU: 初期値は適当
+
     loop {
         //let adc_value = adc.read(&mut adc_pin)?;
 
         let released_button = key_matrix.lock().unwrap().was_released(Button::MASK);
+        // スロットマシン制御ボタン
         let was_rolling_started = released_button & Button::A != 0x00;
         let was_number_selected = released_button & Button::B != 0x00;
+        // パラメータ調整ボタン
+        let was_button_up_pressed   = released_button & Button::UP   != 0x00;
+        let was_button_down_pressed = released_button & Button::DOWN != 0x00;
 
-        const ANIMATION_DELAY_PARAM: u32 = 5;   // TORIAEZU:
+        const NUMBER_SEGMENT_TABLE: [u8; 10] = [
+            0xFC,   // 0
+            0x60,   // 1
+            0xDA,   // 2
+            0xF2,   // 3
+            0x66,   // 4
+            0xB6,   // 5
+            0xBE,   // 6
+            0xE4,   // 7
+            0xFE,   // 8
+            0xF6,   // 9
+        ];
+
+        const NUMBER_SEGMENT_SLOT_TABLE: [[u8; 6]; 10] = [
+            [ 0x3A, 0x10, 0x00, 0x80, 0x46, 0xFD ],
+            [ 0x2A, 0x10, 0x00, 0x00, 0x40, 0x61 ],
+            [ 0x20, 0x00, 0x00, 0x80, 0x86, 0xDB ],
+            [ 0x32, 0x10, 0x00, 0x80, 0xC2, 0xF3 ],
+            [ 0x32, 0x10, 0x00, 0x00, 0xC0, 0x67 ],
+            [ 0x38, 0x00, 0x00, 0x80, 0xC2, 0xB7 ],
+            [ 0x1A, 0x10, 0x00, 0x80, 0xC6, 0xBF ],
+            [ 0x1A, 0x10, 0x00, 0x00, 0x40, 0xE5 ],
+            [ 0x2A, 0x10, 0x00, 0x80, 0xC6, 0xFF ],
+            [ 0x3A, 0x10, 0x00, 0x80, 0xC2, 0xF7 ],
+        ];
 
         match slot_machine.state {
             State::Startup => {
@@ -286,11 +316,21 @@ fn main() -> anyhow::Result<()> {
                 }
             },
             State::Rolling => {
+                // アニメーションの速度を動的に変更 (主にデバッグ用)
+                if was_button_up_pressed {
+                    if animation_delay_param > 1 {
+                        animation_delay_param -= 1;
+                    }
+                }
+                if was_button_down_pressed {
+                    animation_delay_param += 1;
+                }
+        
+                // 桁確定判定
                 if was_number_selected {
-                    // 桁確定処理
                     let index = slot_machine.fixed_digit_count as usize;
                     // TODO: 内部数値から確定数値への変換処理を仕上げる (演出関連)
-                    slot_machine.fixed_number[index] = (slot_machine.internal_number[index] / ANIMATION_DELAY_PARAM / 6) as u8;    // TORIAEZU:
+                    slot_machine.fixed_number[index] = (slot_machine.internal_number[index] / animation_delay_param / NUMBER_SEGMENT_SLOT_TABLE[0].len() as u32) as u8;
                     slot_machine.fixed_digit_count += 1;
 
                     println!("fixed_digit_count : {} -> {}", index, index + 1);
@@ -302,36 +342,10 @@ fn main() -> anyhow::Result<()> {
                 // TODO: 要パラメータ調整
                 for value in slot_machine.internal_number.iter_mut() {
                     *value += 1;
-                    if *value >= ANIMATION_DELAY_PARAM * 10 * 6 {
+                    if *value >= animation_delay_param * NUMBER_SEGMENT_TABLE.len() as u32 * NUMBER_SEGMENT_SLOT_TABLE[0].len() as u32 {
                         *value = 0;
                     }
                 }
-
-                const NUMBER_SEGMENT_TABLE: [u8; 10] = [
-                    0xFC,   // 0
-                    0x60,   // 1
-                    0xDA,   // 2
-                    0xF2,   // 3
-                    0x66,   // 4
-                    0xB6,   // 5
-                    0xBE,   // 6
-                    0xE4,   // 7
-                    0xFE,   // 8
-                    0xF6,   // 9
-                ];
-
-                const NUMBER_SEGMENT_SLOT_TABLE: [[u8; 6]; 10] = [
-                    [ 0x3A, 0x10, 0x00, 0x80, 0x46, 0xFD ],
-                    [ 0x2A, 0x10, 0x00, 0x00, 0x40, 0x61 ],
-                    [ 0x20, 0x00, 0x00, 0x80, 0x86, 0xDB ],
-                    [ 0x32, 0x10, 0x00, 0x80, 0xC2, 0xF3 ],
-                    [ 0x32, 0x10, 0x00, 0x00, 0xC0, 0x67 ],
-                    [ 0x38, 0x00, 0x00, 0x80, 0xC2, 0xB7 ],
-                    [ 0x1A, 0x10, 0x00, 0x80, 0xC6, 0xBF ],
-                    [ 0x1A, 0x10, 0x00, 0x00, 0x40, 0xE5 ],
-                    [ 0x2A, 0x10, 0x00, 0x80, 0xC6, 0xFF ],
-                    [ 0x3A, 0x10, 0x00, 0x80, 0xC2, 0xF7 ],
-                ];
 
                 // 確定済み桁はその数字を表示、未確定の桁は遷移中のパターンを表示
                 let mut display_data = [0u8; 4];
@@ -340,8 +354,8 @@ fn main() -> anyhow::Result<()> {
                         let number_index = slot_machine.fixed_number[i] as usize;
                         NUMBER_SEGMENT_TABLE[number_index]
                     } else {
-                        let number_index    = (slot_machine.internal_number[i] / ANIMATION_DELAY_PARAM / 6) as usize;
-                        let animation_index = (slot_machine.internal_number[i] / ANIMATION_DELAY_PARAM % 6) as usize;
+                        let number_index    = (slot_machine.internal_number[i] / animation_delay_param / NUMBER_SEGMENT_SLOT_TABLE[0].len() as u32) as usize;
+                        let animation_index = (slot_machine.internal_number[i] / animation_delay_param % NUMBER_SEGMENT_SLOT_TABLE[0].len() as u32) as usize;
                         NUMBER_SEGMENT_SLOT_TABLE[number_index][animation_index]
                     };
                 }
