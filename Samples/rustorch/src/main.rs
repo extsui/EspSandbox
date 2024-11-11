@@ -224,6 +224,125 @@ fn main() -> anyhow::Result<()> {
 
     let mut frame_count = 0u64;
 
+    //============================================================
+    //  ポモドーロタイマ
+    //============================================================
+
+    enum State {
+        // 準備中
+        Preparing,
+        // 作業中 (典型的には 25 分)
+        Working,
+        // 作業中断中
+        WorkingPaused,
+        // 休憩中 (典型的には 5 分)
+        Resting,
+        // 休憩中断中
+        RestingPaused,
+    }
+
+    const NUMBER_SEGMENT_TABLE: [u8; 10] = [
+        0xFC,   // 0
+        0x60,   // 1
+        0xDA,   // 2
+        0xF2,   // 3
+        0x66,   // 4
+        0xB6,   // 5
+        0xBE,   // 6
+        0xE4,   // 7
+        0xFE,   // 8
+        0xF6,   // 9
+    ];
+
+    struct PomodoroTimer {
+        pub state: State,
+        pub start_time: u64,
+        pub remaining_time: u32,
+    }
+
+    impl PomodoroTimer {
+        pub fn new() -> Self {
+            PomodoroTimer {
+                state: State::Preparing,
+                start_time: 0,
+                remaining_time: 25 * 60,
+            }
+        }
+    }
+
+    fn convert_to_display_data(time: u32) -> [u8; 4] {
+        let minutes: u32 = time / 60;
+        let seconds: u32 = time % 60;
+
+        // TODO: 
+
+        [
+            NUMBER_SEGMENT_TABLE[(minutes / 10) as usize],
+            NUMBER_SEGMENT_TABLE[(minutes % 10) as usize],
+            NUMBER_SEGMENT_TABLE[(seconds / 10) as usize],
+            NUMBER_SEGMENT_TABLE[(seconds % 10) as usize],
+        ]
+    }
+
+    let mut context = PomodoroTimer::new();
+    led_driver.lock().unwrap().write(convert_to_display_data(context.remaining_time));
+
+    context.start_time = frame_count / 60;
+
+    loop {
+        let released_button = key_matrix.lock().unwrap().was_released(Button::MASK);
+        let was_start_stop_button_pressed = released_button & Button::A != 0x00;
+        let was_reset_button_pressed      = released_button & Button::B != 0x00;
+
+        let mut display_data = convert_to_display_data(context.remaining_time);
+        
+        let sub_frame = frame_count % 60;
+        if sub_frame < 30 {
+            display_data[1] |= 0x01;
+        }
+        if sub_frame == 0 {
+            context.remaining_time -= 1;
+        }
+        led_driver.lock().unwrap().write(display_data);
+
+        /*
+        match context.state {
+            State::Preparing => {
+                if was_start_stop_button_pressed {
+                    context.state = State::Working;
+                }
+            },
+            State::Working => {
+
+                if was_start_stop_button_pressed {
+                    context.state = State::WorkingPaused;
+                }
+            },
+            State::WorkingPaused => {
+                if was_start_stop_button_pressed {
+                    context.state = State::Working;
+                }
+
+            },
+            State::Resting => {
+                if was_reset_button_pressed {
+                    context.state = State::Paused;
+                }
+            },
+
+            State::RestingPaused => {
+
+                if was_start_stop_button_pressed {
+                    context.state = State::Working;
+                }
+            },
+        }
+        */
+        
+/*
+    //============================================================
+    //  スロットマシン
+    //============================================================
     enum State {
         // [---] 起動状態
         Startup,
@@ -254,14 +373,12 @@ fn main() -> anyhow::Result<()> {
             }
         }
 
-        /*
         // TODO: 最終的にモジュール化が必要
 
         // フレーム毎に呼び出される処理
         pub fn update(&self, ) {
 
         }
-        */
     }
 
     let mut slot_machine = SlotMachine::new();
@@ -374,7 +491,7 @@ fn main() -> anyhow::Result<()> {
                 println!("-> Startup");
             },
         }
-
+*/
         // 次のフレームまで待つ
         loop {
             let current_time_us = unsafe { esp_idf_sys::esp_timer_get_time() };
