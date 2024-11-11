@@ -256,7 +256,6 @@ fn main() -> anyhow::Result<()> {
 
     struct PomodoroTimer {
         pub state: State,
-        pub start_time: u64,
         pub remaining_time: u32,
     }
 
@@ -264,48 +263,63 @@ fn main() -> anyhow::Result<()> {
         pub fn new() -> Self {
             PomodoroTimer {
                 state: State::Preparing,
-                start_time: 0,
                 remaining_time: 25 * 60,
             }
         }
     }
 
-    fn convert_to_display_data(time: u32) -> [u8; 4] {
+    fn convert_to_display_data(time: u32, with_dot: bool) -> [u8; 4] {
         let minutes: u32 = time / 60;
         let seconds: u32 = time % 60;
-
-        // TODO: 
-
         [
-            NUMBER_SEGMENT_TABLE[(minutes / 10) as usize],
-            NUMBER_SEGMENT_TABLE[(minutes % 10) as usize],
+            // 1桁目は10分未満になったら消灯
+            if minutes / 10 == 0 { 0x00 } else { NUMBER_SEGMENT_TABLE[(minutes / 10) as usize] },
+            // 2桁目のドットは動作中表現用
+            NUMBER_SEGMENT_TABLE[(minutes % 10) as usize] | if with_dot { 0x01 } else { 0x00 },
+            // 秒以降はそのまま
             NUMBER_SEGMENT_TABLE[(seconds / 10) as usize],
             NUMBER_SEGMENT_TABLE[(seconds % 10) as usize],
         ]
     }
 
     let mut context = PomodoroTimer::new();
-    led_driver.lock().unwrap().write(convert_to_display_data(context.remaining_time));
-
-    context.start_time = frame_count / 60;
+    led_driver.lock().unwrap().write(convert_to_display_data(context.remaining_time, false));
 
     loop {
         let released_button = key_matrix.lock().unwrap().was_released(Button::MASK);
         let was_start_stop_button_pressed = released_button & Button::A != 0x00;
         let was_reset_button_pressed      = released_button & Button::B != 0x00;
-
-        let mut display_data = convert_to_display_data(context.remaining_time);
+        let was_down_button_pressed       = released_button & Button::DOWN != 0x00;
         
         let sub_frame = frame_count % 60;
-        if sub_frame < 30 {
-            display_data[1] |= 0x01;
-        }
-        if sub_frame == 0 {
-            context.remaining_time -= 1;
-        }
-        led_driver.lock().unwrap().write(display_data);
+        let with_dot = sub_frame < 30;
 
-        /*
+        let do_count_down = |_remaining_time: &mut u32, _sub_frame: &u64| {
+            if *_sub_frame == 0 {
+                *_remaining_time -= 1;
+            }
+        };
+
+        // DEBUG: 時間短縮用
+        if was_down_button_pressed {
+            if context.remaining_time > 60 {
+                context.remaining_time -= 60;
+            } else if context.remaining_time > 10 {
+                context.remaining_time -= 10;
+            }
+            let display_data = convert_to_display_data(context.remaining_time, false);
+            led_driver.lock().unwrap().write(display_data);
+        }
+
+        // 強制リセット
+        if was_reset_button_pressed {
+            context.state = State::Preparing;
+            context.remaining_time = 25 * 60;
+            let display_data = convert_to_display_data(context.remaining_time, false);
+            led_driver.lock().unwrap().write(display_data);
+            continue;
+        }
+
         match context.state {
             State::Preparing => {
                 if was_start_stop_button_pressed {
@@ -313,31 +327,40 @@ fn main() -> anyhow::Result<()> {
                 }
             },
             State::Working => {
-
+                do_count_down(&mut context.remaining_time, &sub_frame);
                 if was_start_stop_button_pressed {
                     context.state = State::WorkingPaused;
                 }
+                if context.remaining_time == 0 {
+                    context.remaining_time = 5 * 60;
+                    context.state = State::Resting;
+                }
+                let display_data = convert_to_display_data(context.remaining_time, with_dot);
+                led_driver.lock().unwrap().write(display_data);
             },
             State::WorkingPaused => {
                 if was_start_stop_button_pressed {
                     context.state = State::Working;
                 }
-
             },
             State::Resting => {
-                if was_reset_button_pressed {
-                    context.state = State::Paused;
-                }
-            },
-
-            State::RestingPaused => {
-
+                do_count_down(&mut context.remaining_time, &sub_frame);
                 if was_start_stop_button_pressed {
-                    context.state = State::Working;
+                    context.state = State::RestingPaused;
+                }
+                if context.remaining_time == 0 {
+                    context.remaining_time = 25 * 60;
+                    context.state = State::Preparing;
+                }
+                let display_data = convert_to_display_data(context.remaining_time, with_dot);
+                led_driver.lock().unwrap().write(display_data);
+            },
+            State::RestingPaused => {
+                if was_start_stop_button_pressed {
+                    context.state = State::Resting;
                 }
             },
         }
-        */
         
 /*
     //============================================================
