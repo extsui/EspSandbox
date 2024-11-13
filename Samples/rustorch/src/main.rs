@@ -64,7 +64,7 @@ fn main() -> anyhow::Result<()> {
             seg_digit4: peripherals.pins.gpio20.downgrade_output(),
         };
         let led_driver_clone = Arc::clone(&led_driver);
-        led_driver_clone.lock().unwrap().start_dynamic_lighting(led_pins)?;
+        led_driver_clone.lock().unwrap().start_dynamic_lighting(led_pins, peripherals.timer10)?;
     }
 
     let key_matrix = Arc::new(Mutex::new(KeyMatrix::new()));
@@ -136,7 +136,7 @@ fn main() -> anyhow::Result<()> {
     )?;
 
     let max_duty = channel.get_max_duty();
-
+*/
     // ADC 関連
     let adc = AdcDriver::new(peripherals.adc1)?;
     let adc_config = AdcChannelConfig {
@@ -145,7 +145,7 @@ fn main() -> anyhow::Result<()> {
         ..Default::default()
     };
     let mut adc_pin = AdcChannelDriver::new(&adc, peripherals.pins.gpio5, &adc_config)?;
-*/
+
 /*
     // TODO: モード選択を実装して ToyPiano モードで↓が実行されるようにする
 
@@ -291,6 +291,15 @@ fn main() -> anyhow::Result<()> {
         let was_reset_button_pressed      = released_button & Button::B != 0x00;
         let was_down_button_pressed       = released_button & Button::DOWN != 0x00;
         
+        // 7セグ輝度調整用
+        // 理論上は 0V ~ 3.3V (=3300) だが実際は 3.26V あたりでサチるので
+        // 0% ~ 100% の範囲に入れるために最大値より少し小さい値で % を計算
+        let adc_value = adc.read(&mut adc_pin)?;
+        let percent = (adc_value as u64 * 100 / 3270) as u8;
+        
+        let brightness = percent;
+        led_driver.lock().unwrap().set_brightness([ brightness, brightness, brightness, brightness ]);
+
         let sub_frame = frame_count % 60;
         let with_dot = sub_frame < 30;
 
