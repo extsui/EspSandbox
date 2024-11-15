@@ -35,6 +35,15 @@ mod led_driver;
 use led_driver::LedDriver;
 use led_driver::LedPins;
 
+fn print_freertos_tasks() {
+    let mut buf = [0u8; 1024];
+    unsafe { esp_idf_sys::vTaskList(buf.as_mut_ptr() as *mut i8) };
+    log::info!("tasks:\n \
+               name          state  priority stack hwm id\n{}",
+         String::from_utf8_lossy(&buf).replace('\r', "")
+    );
+}
+
 fn main() -> anyhow::Result<()> {
     // It is necessary to call this function once. Otherwise some patches to the runtime
     // implemented by esp-idf-sys might not link properly. See https://github.com/esp-rs/esp-idf-template/issues/71
@@ -79,7 +88,7 @@ fn main() -> anyhow::Result<()> {
         let key_matrix_clone = Arc::clone(&key_matrix);
         key_matrix_clone.lock().unwrap().start_scan(key_matrix_pins)?;
     }
-/*
+
     // OLED 関連
 
     let i2c0 = peripherals.i2c0;
@@ -103,6 +112,10 @@ fn main() -> anyhow::Result<()> {
         .build();
 
     let _ = std::thread::spawn(move || {
+
+        // デフォルトの優先度が 5 なのでそれより低くしておく
+        unsafe { esp_idf_sys::vTaskPrioritySet(std::ptr::null_mut(), 4); };
+
         loop {
             // ESP 環境では std::time::Instant::now() で起動してからの時刻を取得できなかった
             let uptime_us = unsafe { esp_idf_sys::esp_timer_get_time() };
@@ -113,14 +126,14 @@ fn main() -> anyhow::Result<()> {
             Text::with_baseline(&text, Point::new(0, 0), text_style, Baseline::Top)
             .draw(&mut display)
             .unwrap();
-        
+
             display.flush().unwrap();
             
             FreeRtos::delay_ms(30);
             display.clear(BinaryColor::Off).unwrap();
         }
     });
-*/
+
 /*
     let buzzer_pin = peripherals.pins.gpio4;
     let channel0 = peripherals.ledc.channel0;
@@ -217,6 +230,8 @@ fn main() -> anyhow::Result<()> {
         FreeRtos::delay_ms(20);
     }
 */
+
+    print_freertos_tasks();
 
     // フレームの概念を導入する
     const MICRO_SECONDS_PER_FRAME : i64 = 16667;
