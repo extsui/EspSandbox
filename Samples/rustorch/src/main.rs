@@ -1,33 +1,14 @@
 use esp_idf_hal::gpio::InputPin;
 use esp_idf_hal::gpio::OutputPin;
-use esp_idf_hal::delay::FreeRtos;
 use esp_idf_hal::peripherals::Peripherals;
 use std::sync::{Arc, Mutex};
-use esp_idf_hal::ledc::*;
-use esp_idf_hal::ledc::config::TimerConfig;
-use esp_idf_hal::prelude::*;
+//use esp_idf_hal::ledc::*;
+//use esp_idf_hal::ledc::config::TimerConfig;
+//use esp_idf_hal::prelude::*;
 use esp_idf_hal::adc::attenuation::DB_11;
 use esp_idf_hal::adc::oneshot::*;
 use esp_idf_hal::adc::oneshot::AdcChannelDriver;
 use esp_idf_hal::adc::oneshot::config::AdcChannelConfig;
-
-use esp_idf_hal::i2c::I2cConfig;
-use esp_idf_hal::i2c::I2cDriver;
-
-use embedded_graphics::{
-    mono_font::{ascii::FONT_6X10, MonoTextStyleBuilder},
-    pixelcolor::BinaryColor,
-    prelude::*,
-    text::{Baseline, Text},
-    image::Image,
-};
-use tinybmp::Bmp;
-
-use ssd1306::{
-    prelude::*,
-    I2CDisplayInterface,
-    Ssd1306
-};
 
 mod key_matrix;
 use key_matrix::KeyMatrix;
@@ -37,6 +18,11 @@ use key_matrix::Button;
 mod led_driver;
 use led_driver::LedDriver;
 use led_driver::LedPins;
+
+mod display_driver;
+use display_driver::DisplayDriver;
+
+use esp_idf_hal::delay::FreeRtos;
 
 fn print_freertos_tasks() {
     let mut buf = [0u8; 1024];
@@ -92,55 +78,14 @@ fn main() -> anyhow::Result<()> {
         key_matrix_clone.lock().unwrap().start_scan(key_matrix_pins)?;
     }
 
-    // OLED 関連
-
-    let i2c0 = peripherals.i2c0;
-    let sda = peripherals.pins.gpio6;
-    let scl = peripherals.pins.gpio7;
-
-    let i2c_config = I2cConfig::new().baudrate(400.kHz().into()).scl_enable_pullup(false).sda_enable_pullup(false);
-    let i2c = I2cDriver::new(i2c0, sda, scl, &i2c_config)?;
-
-    let i2c_interface = I2CDisplayInterface::new(i2c);
-    let mut display = Ssd1306::new(i2c_interface, DisplaySize128x64, DisplayRotation::Rotate0)
-        .into_buffered_graphics_mode();
-    display.init().unwrap();
-
-    display.clear(BinaryColor::On).unwrap();
-    display.flush().unwrap();
-
-    let text_style = MonoTextStyleBuilder::new()
-        .font(&FONT_6X10)
-        .text_color(BinaryColor::On)
-        .build();
-
-    let _ = std::thread::spawn(move || {
-
-        // デフォルトの優先度が 5 なのでそれより低くしておく
-        unsafe { esp_idf_sys::vTaskPrioritySet(std::ptr::null_mut(), 4); };
-
-        loop {
-            // ESP 環境では std::time::Instant::now() で起動してからの時刻を取得できなかった
-            let uptime_us = unsafe { esp_idf_sys::esp_timer_get_time() };
-            let text = format!("{} [ms]", uptime_us / 1000);
-
-            println!("{}", text);
-
-            display.clear(BinaryColor::Off).unwrap();
-            
-            let working_bmp = Bmp::from_slice(include_bytes!("../asserts/images/pomodoro_working.bmp")).unwrap();
-            let working_img: Image<Bmp<BinaryColor>> = Image::new(&working_bmp, Point::new(0, 0));
-            working_img.draw(&mut display).unwrap();
- 
-            Text::with_baseline(&text, Point::new(0, 0), text_style, Baseline::Top)
-            .draw(&mut display)
-            .unwrap();
-    
-            display.flush().unwrap();
-            
-            FreeRtos::delay_ms(30);
-        }
-    });
+    let display_driver = Arc::new(Mutex::new(DisplayDriver::new()));
+    {
+        let i2c0 = peripherals.i2c0;
+        let sda = peripherals.pins.gpio6;
+        let scl = peripherals.pins.gpio7;
+        let display_driver_clone = Arc::clone(&display_driver);
+        display_driver_clone.lock().unwrap().start_thread(i2c0, sda, scl)?;
+    }
 
 /*
     let buzzer_pin = peripherals.pins.gpio4;
