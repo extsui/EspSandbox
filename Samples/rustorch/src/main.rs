@@ -19,7 +19,10 @@ use embedded_graphics::{
     pixelcolor::BinaryColor,
     prelude::*,
     text::{Baseline, Text},
+    image::Image,
 };
+use tinybmp::Bmp;
+
 use ssd1306::{
     prelude::*,
     I2CDisplayInterface,
@@ -123,14 +126,19 @@ fn main() -> anyhow::Result<()> {
 
             println!("{}", text);
 
+            display.clear(BinaryColor::Off).unwrap();
+            
+            let working_bmp = Bmp::from_slice(include_bytes!("../asserts/images/pomodoro_working.bmp")).unwrap();
+            let working_img: Image<Bmp<BinaryColor>> = Image::new(&working_bmp, Point::new(0, 0));
+            working_img.draw(&mut display).unwrap();
+ 
             Text::with_baseline(&text, Point::new(0, 0), text_style, Baseline::Top)
             .draw(&mut display)
             .unwrap();
-
+    
             display.flush().unwrap();
             
             FreeRtos::delay_ms(30);
-            display.clear(BinaryColor::Off).unwrap();
         }
     });
 
