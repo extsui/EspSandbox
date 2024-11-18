@@ -86,6 +86,12 @@ fn main() -> anyhow::Result<()> {
         let scl = peripherals.pins.gpio7;
         let display_driver_clone = Arc::clone(&display_driver);
         display_driver_clone.lock().unwrap().start_thread(i2c0, sda, scl)?;
+        {
+            let mut locked = display_driver.lock().unwrap();
+            locked.clear()?;
+            locked.draw_text("Rustorch startup...".to_string(), Point::new(0, 0))?;
+            locked.update()?;
+        }
     }
 
 /*
@@ -305,7 +311,7 @@ fn main() -> anyhow::Result<()> {
                     {
                         let mut locked = display_driver.lock().unwrap();
                         locked.clear()?;
-                        locked.draw_text("Working".to_string(), Point::new(0, 0))?;
+                        locked.draw_image(include_bytes!("../asserts/images/pomodoro_working.bmp"), Point::new(0, 0))?;
                         locked.update()?;
                     }
                 }
@@ -321,7 +327,7 @@ fn main() -> anyhow::Result<()> {
                     {
                         let mut locked = display_driver.lock().unwrap();
                         locked.clear()?;
-                        locked.draw_text("Resting".to_string(), Point::new(0, 0))?;
+                        locked.draw_image(include_bytes!("../asserts/images/pomodoro_resting.bmp"), Point::new(0, 0))?;
                         locked.update()?;
                     }
                 }

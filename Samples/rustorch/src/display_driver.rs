@@ -19,14 +19,12 @@ use ssd1306::{
     Ssd1306
 };
 
-use esp_idf_hal::delay::FreeRtos;
-
 use std::sync::mpsc;
 use std::sync::mpsc::SendError;
 
 pub enum DisplayCommand {
     Clear,
-    DrawImage,  // TODO:
+    DrawImage { image: &'static [u8], point: Point },
     DrawText { text: String, point: Point },
     Update,
 }
@@ -71,10 +69,10 @@ impl DisplayDriver {
                     DisplayCommand::Clear => {
                         display.clear(BinaryColor::Off).unwrap();
                     }
-                    DisplayCommand::DrawImage => {
-                        //let bmp = Bmp::from_slice(include_bytes!("../asserts/images/pomodoro_working.bmp")).unwrap();
-                        //let gfx_img: Image<Bmp<BinaryColor>> = Image::new(&bmp, Point::new(0, 0));
-                        //gfx_img.draw(&mut display).unwrap();
+                    DisplayCommand::DrawImage { image, point } => {
+                        let bmp = Bmp::from_slice(image).unwrap();
+                        let gfx_img: Image<Bmp<BinaryColor>> = Image::new(&bmp, point);
+                        gfx_img.draw(&mut display).unwrap();
                     }
                     DisplayCommand::DrawText { text, point } => {
                         let text_img = Text::with_baseline(&text, point, text_style, Baseline::Top);
@@ -96,9 +94,9 @@ impl DisplayDriver {
     }
 
     // 画像描画
-    //pub fn draw_image(&mut self, image, point: Point) {
-    //    self.sender.as_mut().unwrap().send(DisplayCommand::DrawImage {});
-    //}
+    pub fn draw_image(&mut self, image: &'static [u8], point: Point) -> Result<(), SendError<DisplayCommand>> {
+        self.sender.as_mut().unwrap().send(DisplayCommand::DrawImage { image, point })
+    }
 
     // テキスト描画
     pub fn draw_text(&mut self, text: String, point: Point) -> Result<(), SendError<DisplayCommand>> {
