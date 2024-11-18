@@ -21,13 +21,24 @@ use ssd1306::{
 
 use esp_idf_hal::delay::FreeRtos;
 
-pub struct DisplayDriver {
+use std::sync::mpsc;
+use std::sync::mpsc::SendError;
 
+pub enum DisplayCommand {
+    Clear,
+    DrawImage,  // TODO:
+    DrawText { text: String, point: Point },
+    Update,
+}
+
+pub struct DisplayDriver {
+    sender: Option<mpsc::SyncSender<DisplayCommand>>,
 }
 
 impl DisplayDriver {
     pub fn new() -> Self {
-        DisplayDriver {
+        Self {
+            sender: None,
         }
     }
 
@@ -47,49 +58,57 @@ impl DisplayDriver {
             .font(&FONT_6X10)
             .text_color(BinaryColor::On)
             .build();
+        
+        let (tx, rx) = mpsc::sync_channel::<DisplayCommand>(10);
 
         let _ = std::thread::spawn(move || {
 
             // デフォルトの優先度が 5 なのでそれより低くしておく
             unsafe { esp_idf_sys::vTaskPrioritySet(std::ptr::null_mut(), 4); };
 
-            loop {
-                // ESP 環境では std::time::Instant::now() で起動してからの時刻を取得できなかった
-                let uptime_us = unsafe { esp_idf_sys::esp_timer_get_time() };
-                let text = format!("{} [ms]", uptime_us / 1000);
-
-                println!("{}", text);
-
-                display.clear(BinaryColor::Off).unwrap();
-                
-                let working_bmp = Bmp::from_slice(include_bytes!("../asserts/images/pomodoro_working.bmp")).unwrap();
-                let working_img: Image<Bmp<BinaryColor>> = Image::new(&working_bmp, Point::new(0, 0));
-                working_img.draw(&mut display).unwrap();
-    
-                Text::with_baseline(&text, Point::new(0, 0), text_style, Baseline::Top)
-                .draw(&mut display)
-                .unwrap();
-        
-                display.flush().unwrap();
-                
-                FreeRtos::delay_ms(30);
+            for command in rx {
+                match command {
+                    DisplayCommand::Clear => {
+                        display.clear(BinaryColor::Off).unwrap();
+                    }
+                    DisplayCommand::DrawImage => {
+                        //let bmp = Bmp::from_slice(include_bytes!("../asserts/images/pomodoro_working.bmp")).unwrap();
+                        //let gfx_img: Image<Bmp<BinaryColor>> = Image::new(&bmp, Point::new(0, 0));
+                        //gfx_img.draw(&mut display).unwrap();
+                    }
+                    DisplayCommand::DrawText { text, point } => {
+                        let text_img = Text::with_baseline(&text, point, text_style, Baseline::Top);
+                        text_img.draw(&mut display).unwrap();
+                    }
+                    DisplayCommand::Update => {
+                        display.flush().unwrap();
+                    }
+                }
             }
         });
+        self.sender = Some(tx);
         Ok(())
     }
 
-    // 画像描画
-    pub fn draw_image(&mut self) {
-        // TODO:
+    // 描画系の前に一度だけ呼び出すこと
+    pub fn clear(&mut self) -> Result<(), SendError<DisplayCommand>> {
+        self.sender.as_mut().unwrap().send(DisplayCommand::Clear)
     }
+
+    // 画像描画
+    //pub fn draw_image(&mut self, image, point: Point) {
+    //    self.sender.as_mut().unwrap().send(DisplayCommand::DrawImage {});
+    //}
 
     // テキスト描画
-    pub fn draw_text(&mut self) {
-        // TODO:
+    pub fn draw_text(&mut self, text: String, point: Point) -> Result<(), SendError<DisplayCommand>> {
+        self.sender.as_mut().unwrap().send(DisplayCommand::DrawText { text, point })
     }
 
-    // 画面更新
-    pub fn update(&mut self) {
-        // TODO:
+    // 画面の更新
+    // - 画面更新に数十ミリ秒かかる
+    // - 画面描画が完了するまでは次の描画依頼を出しても詰まることに注意
+    pub fn update(&mut self) -> Result<(), SendError<DisplayCommand>> {
+        self.sender.as_mut().unwrap().send(DisplayCommand::Update)
     }
 }

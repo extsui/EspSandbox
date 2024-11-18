@@ -21,6 +21,7 @@ use led_driver::LedPins;
 
 mod display_driver;
 use display_driver::DisplayDriver;
+use embedded_graphics::prelude::*;
 
 use esp_idf_hal::delay::FreeRtos;
 
@@ -301,6 +302,12 @@ fn main() -> anyhow::Result<()> {
             State::Preparing => {
                 if was_start_stop_button_pressed {
                     context.state = State::Working;
+                    {
+                        let mut locked = display_driver.lock().unwrap();
+                        locked.clear()?;
+                        locked.draw_text("Working".to_string(), Point::new(0, 0))?;
+                        locked.update()?;
+                    }
                 }
             },
             State::Working => {
@@ -311,6 +318,12 @@ fn main() -> anyhow::Result<()> {
                 if context.remaining_time == 0 {
                     context.remaining_time = 5 * 60;
                     context.state = State::Resting;
+                    {
+                        let mut locked = display_driver.lock().unwrap();
+                        locked.clear()?;
+                        locked.draw_text("Resting".to_string(), Point::new(0, 0))?;
+                        locked.update()?;
+                    }
                 }
                 let display_data = convert_to_display_data(context.remaining_time, with_dot);
                 led_driver.lock().unwrap().write(display_data);
