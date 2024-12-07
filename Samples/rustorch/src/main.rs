@@ -19,6 +19,9 @@ mod led_driver;
 use led_driver::LedDriver;
 use led_driver::LedPins;
 
+mod buzzer_driver;
+use buzzer_driver::BuzzerDriver;
+
 mod display_driver;
 use display_driver::DisplayDriver;
 use embedded_graphics::prelude::*;
@@ -94,22 +97,15 @@ fn main() -> anyhow::Result<()> {
         }
     }
 
-/*
-    let buzzer_pin = peripherals.pins.gpio4;
-    let channel0 = peripherals.ledc.channel0;
-    let timer0 = peripherals.ledc.timer0;
-    
-    let timer_config = &TimerConfig::new().resolution(Resolution::Bits10).frequency(1.kHz().into());
-    let mut timer = LedcTimerDriver::new(timer0, timer_config)?;
+    let buzzer_driver = Arc::new(Mutex::new(BuzzerDriver::new()));
+    {
+        let buzzer_pin = peripherals.pins.gpio4;
+        let channel0 = peripherals.ledc.channel0;
+        let timer0 = peripherals.ledc.timer0;
+        let buzzer_driver_clone = Arc::clone(&buzzer_driver);
+        buzzer_driver_clone.lock().unwrap().start_thread(buzzer_pin, channel0, timer0)?;
+    }
 
-    let mut channel = LedcDriver::new(
-        channel0,
-        &timer,
-        buzzer_pin,
-    )?;
-
-    let max_duty = channel.get_max_duty();
-*/
     // ADC 関連
     let adc = AdcDriver::new(peripherals.adc1)?;
     let adc_config = AdcChannelConfig {
@@ -119,7 +115,6 @@ fn main() -> anyhow::Result<()> {
     };
     let mut adc_pin = AdcChannelDriver::new(&adc, peripherals.pins.gpio5, &adc_config)?;
 
-/*
     // TODO: モード選択を実装して ToyPiano モードで↓が実行されるようにする
 
     // メインスレッド
@@ -178,18 +173,15 @@ fn main() -> anyhow::Result<()> {
         match frequency_base {
             Some(value) => {
                 let frequency = (value as f32 * octave) as u32;
-                timer.set_frequency(frequency.Hz())?;
-                channel.set_duty(max_duty / 2)?;    // これが音出力のトリガーとなる
-                timer.resume()?;
+                buzzer_driver.lock().unwrap().start_tone(frequency)?;
             },
             None => {
-                timer.pause()?;
+                buzzer_driver.lock().unwrap().stop_tone()?;
             }
         }
         
         FreeRtos::delay_ms(20);
     }
-*/
 
     print_freertos_tasks();
 
