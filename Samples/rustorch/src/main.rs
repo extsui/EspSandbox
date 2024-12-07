@@ -115,74 +115,6 @@ fn main() -> anyhow::Result<()> {
     };
     let mut adc_pin = AdcChannelDriver::new(&adc, peripherals.pins.gpio5, &adc_config)?;
 
-    // TODO: モード選択を実装して ToyPiano モードで↓が実行されるようにする
-
-    // メインスレッド
-    loop {
-        // ボタン情報取得
-        let status = key_matrix.lock().unwrap().get_status();
-        log::info!("[btn] {:02x}", status);
-
-        let adc_value = adc.read(&mut adc_pin)?;
-        log::info!("[adc] {}", adc_value);
-        
-        let octave =
-            if      adc_value < 1000 { 0.5 }
-            else if adc_value < 2000 { 1.0 }
-            else if adc_value < 3000 { 2.0 }
-            else                     { 4.0 };
-        
-        // ボタンが 6 個しかないのでシを AB 同時押しで表現する
-        let frequency_base = match status {
-            // 同時押しなので優先的に判定
-            _ if status == Button::B | Button::A => Some(988),  // B
-            // 以降は単押し判定
-            _ if status == Button::UP    => Some(523),  // C
-            _ if status == Button::LEFT  => Some(587),  // D
-            _ if status == Button::DOWN  => Some(659),  // E
-            _ if status == Button::RIGHT => Some(698),  // F
-            _ if status == Button::B     => Some(783),  // G
-            _ if status == Button::A     => Some(880),  // A
-            _ => None,
-        };
-
-        const NUMBER_SEGMENT_TABLE: [u8; 10] = [
-            0xFC,   // 0
-            0x60,   // 1
-            0xDA,   // 2
-            0xF2,   // 3
-            0x66,   // 4
-            0xB6,   // 5
-            0xBE,   // 6
-            0xE4,   // 7
-            0xFE,   // 8
-            0xF6,   // 9
-        ];
-        let mut display_data = [
-            NUMBER_SEGMENT_TABLE[(adc_value / 1000 % 10) as usize],
-            NUMBER_SEGMENT_TABLE[(adc_value / 100  % 10) as usize],
-            NUMBER_SEGMENT_TABLE[(adc_value / 10   % 10) as usize],
-            NUMBER_SEGMENT_TABLE[(adc_value / 1    % 10) as usize],
-        ];
-        if      adc_value < 10   { display_data[0..3].fill(0); }
-        else if adc_value < 100  { display_data[0..2].fill(0); }
-        else if adc_value < 1000 { display_data[0..1].fill(0); }
-
-        led_driver.lock().unwrap().write(display_data);
-
-        match frequency_base {
-            Some(value) => {
-                let frequency = (value as f32 * octave) as u32;
-                buzzer_driver.lock().unwrap().start_tone(frequency)?;
-            },
-            None => {
-                buzzer_driver.lock().unwrap().stop_tone()?;
-            }
-        }
-        
-        FreeRtos::delay_ms(20);
-    }
-
     print_freertos_tasks();
 
     // フレームの概念を導入する
@@ -252,6 +184,8 @@ fn main() -> anyhow::Result<()> {
     let mut context = PomodoroTimer::new();
     led_driver.lock().unwrap().write(convert_to_display_data(context.remaining_time, false));
 
+    let mut previous_key_status = 0u8;
+
     loop {
         let released_button = key_matrix.lock().unwrap().was_released(Button::MASK);
         let was_start_stop_button_pressed = released_button & Button::A != 0x00;
@@ -263,7 +197,69 @@ fn main() -> anyhow::Result<()> {
         // 0% ~ 100% の範囲に入れるために最大値より少し小さい値で % を計算
         let adc_value = adc.read(&mut adc_pin)?;
         let percent = (adc_value as u64 * 100 / 3270) as u8;
+
+        // TODO: モード選択を実装して ToyPiano モードで↓が実行されるようにする
+
+        // ボタン情報取得
+        let key_status = key_matrix.lock().unwrap().get_status();
+        let octave =
+            if      adc_value < 1000 { 0.5 }
+            else if adc_value < 2000 { 1.0 }
+            else if adc_value < 3000 { 2.0 }
+            else                     { 4.0 };
         
+        if previous_key_status != key_status {
+            if key_status == 0 {
+                // 全てのボタンを離した
+                buzzer_driver.lock().unwrap().stop_tone()?;
+            } else {
+                // ボタンが 6 個しかないのでシを AB 同時押しで表現する
+                let frequency_base = match key_status {
+                    // 同時押しなので優先的に判定
+                    _ if key_status == Button::B | Button::A => Some(988),  // B
+                    // 以降は単押し判定
+                    _ if key_status == Button::UP    => Some(523),  // C
+                    _ if key_status == Button::LEFT  => Some(587),  // D
+                    _ if key_status == Button::DOWN  => Some(659),  // E
+                    _ if key_status == Button::RIGHT => Some(698),  // F
+                    _ if key_status == Button::B     => Some(783),  // G
+                    _ if key_status == Button::A     => Some(880),  // A
+                    _ => None,
+                };
+                if let Some(value) = frequency_base {
+                    let frequency = (value as f32 * octave) as u32;
+                    buzzer_driver.lock().unwrap().start_tone(frequency)?;
+                }
+            }
+        }
+
+        const NUMBER_SEGMENT_TABLE: [u8; 10] = [
+            0xFC,   // 0
+            0x60,   // 1
+            0xDA,   // 2
+            0xF2,   // 3
+            0x66,   // 4
+            0xB6,   // 5
+            0xBE,   // 6
+            0xE4,   // 7
+            0xFE,   // 8
+            0xF6,   // 9
+        ];
+        let mut display_data = [
+            NUMBER_SEGMENT_TABLE[(adc_value / 1000 % 10) as usize],
+            NUMBER_SEGMENT_TABLE[(adc_value / 100  % 10) as usize],
+            NUMBER_SEGMENT_TABLE[(adc_value / 10   % 10) as usize],
+            NUMBER_SEGMENT_TABLE[(adc_value / 1    % 10) as usize],
+        ];
+        if      adc_value < 10   { display_data[0..3].fill(0); }
+        else if adc_value < 100  { display_data[0..2].fill(0); }
+        else if adc_value < 1000 { display_data[0..1].fill(0); }
+
+        led_driver.lock().unwrap().write(display_data);
+
+        previous_key_status = key_status;
+        
+/*
         let brightness = percent;
         led_driver.lock().unwrap().set_brightness([ brightness, brightness, brightness, brightness ]);
 
@@ -349,6 +345,7 @@ fn main() -> anyhow::Result<()> {
                 }
             },
         }
+*/
         
 /*
     //============================================================
