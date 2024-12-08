@@ -26,12 +26,10 @@ use embedded_graphics::prelude::*;
 
 mod app_context;
 
-// TODO:
-//mod app_toy_piano;
-//use app_toy_piano::ToyPiano;
-//mod app_pomodoro_timer;
-//use app_pomodoro_timer::PomodoroTimer;
-
+mod app_toy_piano;
+use app_toy_piano::ToyPiano;
+mod app_pomodoro_timer;
+use app_pomodoro_timer::PomodoroTimer;
 mod app_slot_game;
 use app_slot_game::SlotGame;
 
@@ -44,6 +42,20 @@ fn print_freertos_tasks() {
                name          state  priority stack hwm id\n{}",
          String::from_utf8_lossy(&buf).replace('\r', "")
     );
+}
+
+fn draw_menu(display: &Arc<Mutex<DisplayDriver>>, app_names: &Vec<&str>, selected_index: usize) {
+    let mut locked = display.lock().unwrap();
+    locked.clear().unwrap();
+    locked.draw_text("== Menu ==".to_string(), Point::new(0, 0)).unwrap();
+    for (i, name) in app_names.iter().enumerate() {
+        if i == selected_index {
+            locked.draw_text(format!("> {}", name), Point::new(0, (i + 1) as i32 * 10)).unwrap();
+        } else {
+            locked.draw_text(format!("  {}", name), Point::new(0, (i + 1) as i32 * 10)).unwrap();
+        }
+    }
+    locked.update().unwrap();
 }
 
 fn main() -> anyhow::Result<()> {
@@ -127,28 +139,70 @@ fn main() -> anyhow::Result<()> {
 
     print_freertos_tasks();
 
+    // 各アプリケーション
+    let mut apps: Vec<Box<dyn AppFramework>> = vec![
+        Box::new(PomodoroTimer::new()),
+        Box::new(ToyPiano::new()),
+        Box::new(SlotGame::new()),
+    ];
+    // 選択中のアプリケーション
+    let mut selected_index = 0 as usize;
+    
+    let mut is_app_running = false;
+
+    /*
+    // TODO: なんかうまくいかん...
+    let app_names: Vec<&String> = apps.iter().map(|app| app.get_name().clone()).collect();
+    let app_names_refs: Vec<&str> = app_names.iter().map(|name| name.as_str()).collect();
+    */
+    // TODO: 本当は apps から get_name() で取得したベクタにしたい
+    let app_names = vec![
+        "Pomodoro timer",
+        "Toy piano",
+        "Slot game",
+    ];
+    // メニュー画面を表示
+    draw_menu(&context.display, &app_names, selected_index);
+
     // フレームの概念を導入する
     const MICRO_SECONDS_PER_FRAME : i64 = 16667;
     let mut next_frame_time_us = unsafe { esp_idf_sys::esp_timer_get_time() } + MICRO_SECONDS_PER_FRAME;
-
     let mut frame_count = 0u64;
-/*
-    // TODO: 他の Application も追加する
-    let mut toy_piano = ToyPiano::new();
-    toy_piano.initialize();
-
-    let mut pomodoro_timer = PomodoroTimer::new();
-    pomodoro_timer.initialize();
-*/
-    let mut slot_game = SlotGame::new();
-    slot_game.initialize();
 
     loop {
-        slot_game.update(&context, frame_count)?;
+        if !is_app_running {
+            // メニュー画面
+            let button = context.button.lock().unwrap().was_released(Button::MASK);
+            let is_up_event = button & Button::UP != 0;
+            let is_down_event = button & Button::DOWN != 0;
+            let is_run_event = button & Button::A != 0;
+            if is_up_event {
+                selected_index = (selected_index + apps.len() - 1) % apps.len();
+                draw_menu(&context.display, &app_names, selected_index);
+            }
+            if is_down_event {
+                selected_index = (selected_index + 1) % apps.len();
+                draw_menu(&context.display, &app_names, selected_index);
+            }
+            if is_run_event {
+                // 共通処理
+                let mut locked = context.display.lock().unwrap();
+                {
+                    locked.clear().unwrap();
+                    locked.update().unwrap();
+                }
 
-        if slot_game.is_finished() {
-            log::info!("Finished!");
-            break Ok(());
+                let app = &mut apps[selected_index];
+                app.initialize();
+                is_app_running = true;
+            }
+        } else {
+            // アプリ画面
+            let app = &mut apps[selected_index];
+            app.update(&context, frame_count)?;
+            if app.is_finished() {
+                is_app_running = false;
+            }
         }
 
         // TODO: 誤差が蓄積しないカウント方法にするべき

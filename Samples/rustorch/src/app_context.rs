@@ -23,6 +23,7 @@ pub struct AppMetadata {
 */
 
 pub trait AppFramework {
+    fn get_name(&self) -> &str;
     fn initialize(&mut self);
     fn update(&mut self, context: &AppContext, frame_count: u64) -> anyhow::Result<()>;
     fn is_finished(&self) -> bool;

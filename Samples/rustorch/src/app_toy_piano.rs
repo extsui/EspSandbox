@@ -18,6 +18,10 @@ impl ToyPiano {
 }
 
 impl AppFramework for ToyPiano {
+    fn get_name(&self) -> &str {
+        "Toy piano"
+    }
+
     fn initialize(&mut self) {
 
     }

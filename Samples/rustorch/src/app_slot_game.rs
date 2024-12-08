@@ -40,6 +40,10 @@ impl SlotGame {
 }
 
 impl AppFramework for SlotGame {
+    fn get_name(&self) -> &str {
+        "Slot game"
+    }
+
     fn initialize(&mut self) {
 
     }

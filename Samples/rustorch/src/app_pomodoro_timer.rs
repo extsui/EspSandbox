@@ -63,6 +63,10 @@ fn convert_to_display_data(time: u32, with_dot: bool) -> [u8; 4] {
 }
 
 impl AppFramework for PomodoroTimer {
+    fn get_name(&self) -> &str {
+        "Pomodoro timer"
+    }
+
     fn initialize(&mut self) {
 
     }
