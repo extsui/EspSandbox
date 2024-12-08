@@ -1,3 +1,4 @@
+use app_context::AppContext;
 use esp_idf_hal::gpio::InputPin;
 use esp_idf_hal::gpio::OutputPin;
 use esp_idf_hal::peripherals::Peripherals;
@@ -21,6 +22,8 @@ use volume::Volume;
 mod display_driver;
 use display_driver::DisplayDriver;
 use embedded_graphics::prelude::*;
+
+mod app_context;
 
 use esp_idf_hal::delay::FreeRtos;
 
@@ -102,7 +105,15 @@ fn main() -> anyhow::Result<()> {
         buzzer_driver_clone.lock().unwrap().start_thread(buzzer_pin, channel0, timer0)?;
     }
 
-    let mut volume = Volume::new(peripherals.adc1, peripherals.pins.gpio5);
+    let volume = Arc::new(Mutex::new(Volume::new(peripherals.adc1, peripherals.pins.gpio5)));
+
+    let context = AppContext {
+        button: key_matrix,
+        buzzer: buzzer_driver,
+        display: display_driver,
+        led: led_driver,
+        volume: volume,
+    };
 
     print_freertos_tasks();
 
@@ -170,13 +181,13 @@ fn main() -> anyhow::Result<()> {
         ]
     }
 
-    let mut context = PomodoroTimer::new();
-    led_driver.lock().unwrap().write(convert_to_display_data(context.remaining_time, false));
+    //let mut context = PomodoroTimer::new();
+    //context.led.lock().unwrap().write(convert_to_display_data(context.remaining_time, false));
 
     let mut previous_key_status = 0u8;
 
     loop {
-        let released_button = key_matrix.lock().unwrap().was_released(Button::MASK);
+        let released_button = context.button.lock().unwrap().was_released(Button::MASK);
         let was_start_stop_button_pressed = released_button & Button::A != 0x00;
         let was_reset_button_pressed      = released_button & Button::B != 0x00;
         let was_down_button_pressed       = released_button & Button::DOWN != 0x00;
@@ -184,13 +195,13 @@ fn main() -> anyhow::Result<()> {
         // 7セグ輝度調整用
         // 理論上は 0V ~ 3.3V (=3300) だが実際は 3.26V あたりでサチるので
         // 0% ~ 100% の範囲に入れるために最大値より少し小さい値で % を計算
-        let raw_value = volume.read_raw();
+        let raw_value = context.volume.lock().unwrap().read_raw();
         let percent = Volume::to_percent(raw_value);
 
         // TODO: モード選択を実装して ToyPiano モードで↓が実行されるようにする
 
         // ボタン情報取得
-        let key_status = key_matrix.lock().unwrap().get_status();
+        let key_status = context.button.lock().unwrap().get_status();
         let octave =
             if      raw_value < 1000 { 0.5 }
             else if raw_value < 2000 { 1.0 }
@@ -200,7 +211,7 @@ fn main() -> anyhow::Result<()> {
         if previous_key_status != key_status {
             if key_status == 0 {
                 // 全てのボタンを離した
-                buzzer_driver.lock().unwrap().stop_tone()?;
+                context.buzzer.lock().unwrap().stop_tone()?;
             } else {
                 // ボタンが 6 個しかないのでシを AB 同時押しで表現する
                 let frequency_base = match key_status {
@@ -217,7 +228,7 @@ fn main() -> anyhow::Result<()> {
                 };
                 if let Some(value) = frequency_base {
                     let frequency = (value as f32 * octave) as u32;
-                    buzzer_driver.lock().unwrap().start_tone(frequency)?;
+                    context.buzzer.lock().unwrap().start_tone(frequency)?;
                 }
             }
         }
@@ -244,7 +255,7 @@ fn main() -> anyhow::Result<()> {
         else if raw_value < 100  { display_data[0..2].fill(0); }
         else if raw_value < 1000 { display_data[0..1].fill(0); }
 
-        led_driver.lock().unwrap().write(display_data);
+        context.led.lock().unwrap().write(display_data);
 
         previous_key_status = key_status;
         
