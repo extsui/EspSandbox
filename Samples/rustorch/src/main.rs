@@ -2,13 +2,6 @@ use esp_idf_hal::gpio::InputPin;
 use esp_idf_hal::gpio::OutputPin;
 use esp_idf_hal::peripherals::Peripherals;
 use std::sync::{Arc, Mutex};
-//use esp_idf_hal::ledc::*;
-//use esp_idf_hal::ledc::config::TimerConfig;
-//use esp_idf_hal::prelude::*;
-use esp_idf_hal::adc::attenuation::DB_11;
-use esp_idf_hal::adc::oneshot::*;
-use esp_idf_hal::adc::oneshot::AdcChannelDriver;
-use esp_idf_hal::adc::oneshot::config::AdcChannelConfig;
 
 mod key_matrix;
 use key_matrix::KeyMatrix;
@@ -21,6 +14,9 @@ use led_driver::LedPins;
 
 mod buzzer_driver;
 use buzzer_driver::BuzzerDriver;
+
+mod volume;
+use volume::Volume;
 
 mod display_driver;
 use display_driver::DisplayDriver;
@@ -106,14 +102,7 @@ fn main() -> anyhow::Result<()> {
         buzzer_driver_clone.lock().unwrap().start_thread(buzzer_pin, channel0, timer0)?;
     }
 
-    // ADC 関連
-    let adc = AdcDriver::new(peripherals.adc1)?;
-    let adc_config = AdcChannelConfig {
-        attenuation: DB_11,
-        calibration: true,
-        ..Default::default()
-    };
-    let mut adc_pin = AdcChannelDriver::new(&adc, peripherals.pins.gpio5, &adc_config)?;
+    let mut volume = Volume::new(peripherals.adc1, peripherals.pins.gpio5);
 
     print_freertos_tasks();
 
@@ -195,17 +184,17 @@ fn main() -> anyhow::Result<()> {
         // 7セグ輝度調整用
         // 理論上は 0V ~ 3.3V (=3300) だが実際は 3.26V あたりでサチるので
         // 0% ~ 100% の範囲に入れるために最大値より少し小さい値で % を計算
-        let adc_value = adc.read(&mut adc_pin)?;
-        let percent = (adc_value as u64 * 100 / 3270) as u8;
+        let raw_value = volume.read_raw();
+        let percent = Volume::to_percent(raw_value);
 
         // TODO: モード選択を実装して ToyPiano モードで↓が実行されるようにする
 
         // ボタン情報取得
         let key_status = key_matrix.lock().unwrap().get_status();
         let octave =
-            if      adc_value < 1000 { 0.5 }
-            else if adc_value < 2000 { 1.0 }
-            else if adc_value < 3000 { 2.0 }
+            if      raw_value < 1000 { 0.5 }
+            else if raw_value < 2000 { 1.0 }
+            else if raw_value < 3000 { 2.0 }
             else                     { 4.0 };
         
         if previous_key_status != key_status {
@@ -246,14 +235,14 @@ fn main() -> anyhow::Result<()> {
             0xF6,   // 9
         ];
         let mut display_data = [
-            NUMBER_SEGMENT_TABLE[(adc_value / 1000 % 10) as usize],
-            NUMBER_SEGMENT_TABLE[(adc_value / 100  % 10) as usize],
-            NUMBER_SEGMENT_TABLE[(adc_value / 10   % 10) as usize],
-            NUMBER_SEGMENT_TABLE[(adc_value / 1    % 10) as usize],
+            NUMBER_SEGMENT_TABLE[(raw_value / 1000 % 10) as usize],
+            NUMBER_SEGMENT_TABLE[(raw_value / 100  % 10) as usize],
+            NUMBER_SEGMENT_TABLE[(raw_value / 10   % 10) as usize],
+            NUMBER_SEGMENT_TABLE[(raw_value / 1    % 10) as usize],
         ];
-        if      adc_value < 10   { display_data[0..3].fill(0); }
-        else if adc_value < 100  { display_data[0..2].fill(0); }
-        else if adc_value < 1000 { display_data[0..1].fill(0); }
+        if      raw_value < 10   { display_data[0..3].fill(0); }
+        else if raw_value < 100  { display_data[0..2].fill(0); }
+        else if raw_value < 1000 { display_data[0..1].fill(0); }
 
         led_driver.lock().unwrap().write(display_data);
 
