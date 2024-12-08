@@ -20,10 +20,11 @@ pub struct AppMetadata {
     pub name: String,
     pub icon: Option<[u8; 128 * 64]>,   // TODO:
 }
+*/
 
 pub trait AppFramework {
     fn initialize(&mut self);
-    fn update(&mut self, context: &AppContext);
+    fn update(&mut self, context: &AppContext) -> anyhow::Result<()>;
     fn is_finished(&self) -> bool;
 }
-*/
+
