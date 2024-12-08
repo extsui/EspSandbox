@@ -26,8 +26,12 @@ use embedded_graphics::prelude::*;
 
 mod app_context;
 
-mod app_toy_piano;
-use app_toy_piano::ToyPiano;
+// TODO:
+//mod app_toy_piano;
+//use app_toy_piano::ToyPiano;
+
+mod app_pomodoro_timer;
+use app_pomodoro_timer::PomodoroTimer;
 
 use esp_idf_hal::delay::FreeRtos;
 
@@ -125,19 +129,25 @@ fn main() -> anyhow::Result<()> {
     const MICRO_SECONDS_PER_FRAME : i64 = 16667;
     let mut next_frame_time_us = unsafe { esp_idf_sys::esp_timer_get_time() } + MICRO_SECONDS_PER_FRAME;
 
-    //let mut frame_count = 0u64;
-
+    let mut frame_count = 0u64;
+/*
     // TODO: 他の Application も追加する
     let mut toy_piano = ToyPiano::new();
     toy_piano.initialize();
-    
-    loop {
-        toy_piano.update(&context)?;
+*/
 
-        if toy_piano.is_finished() {
+    let mut pomodoro_timer = PomodoroTimer::new();
+    pomodoro_timer.initialize();
+
+    loop {
+        pomodoro_timer.update(&context, frame_count)?;
+
+        if pomodoro_timer.is_finished() {
             log::info!("Finished!");
             break Ok(());
         }
+
+        // TODO: 誤差が蓄積しないカウント方法にするべき
 
         // 次のフレームまで待つ
         loop {
@@ -149,6 +159,6 @@ fn main() -> anyhow::Result<()> {
             // WDT クリアのために必要
             FreeRtos::delay_ms(1);
         }
-        //frame_count += 1;
+        frame_count += 1;
     }
 }

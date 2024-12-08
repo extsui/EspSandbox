@@ -1,5 +1,10 @@
-/*
-use app_context;
+use crate::app_context::AppContext;
+use crate::app_context::AppFramework;
+
+use crate::Button;
+use crate::Volume;
+
+use embedded_graphics::prelude::*;
 
 enum State {
     // 準備中
@@ -62,7 +67,12 @@ impl AppFramework for PomodoroTimer {
 
     }
 
-    fn update(&mut self, context: &AppContext) {
+    fn update(&mut self, context: &AppContext, frame_count: u64) -> anyhow::Result<()> {
+        let key_status = context.button.lock().unwrap().get_status();
+        if key_status == Button::MASK {
+            self.finished = true;
+            return Ok(());
+        }
 
         let released_button = context.button.lock().unwrap().was_released(Button::MASK);
         let was_start_stop_button_pressed = released_button & Button::A != 0x00;
@@ -70,10 +80,10 @@ impl AppFramework for PomodoroTimer {
         let was_down_button_pressed       = released_button & Button::DOWN != 0x00;
 
         let raw_value = context.volume.lock().unwrap().read_raw();
-        let percent = Volume::to_percent(raw_value);
+        let percent = Volume::to_percent(raw_value) as u8;
 
         let brightness = percent;
-        led_driver.lock().unwrap().set_brightness([ brightness, brightness, brightness, brightness ]);
+        context.led.lock().unwrap().set_brightness([ brightness, brightness, brightness, brightness ]);
 
         let sub_frame = frame_count % 60;
         let with_dot = sub_frame < 30;
@@ -86,30 +96,30 @@ impl AppFramework for PomodoroTimer {
 
         // DEBUG: 時間短縮用
         if was_down_button_pressed {
-            if context.remaining_time > 60 {
-                context.remaining_time -= 60;
-            } else if context.remaining_time > 10 {
-                context.remaining_time -= 10;
+            if self.remaining_time > 60 {
+                self.remaining_time -= 60;
+            } else if self.remaining_time > 10 {
+                self.remaining_time -= 10;
             }
-            let display_data = convert_to_display_data(context.remaining_time, false);
-            led_driver.lock().unwrap().write(display_data);
+            let display_data = convert_to_display_data(self.remaining_time, false);
+            context.led.lock().unwrap().write(display_data);
         }
 
         // 強制リセット
         if was_reset_button_pressed {
-            context.state = State::Preparing;
-            context.remaining_time = 25 * 60;
-            let display_data = convert_to_display_data(context.remaining_time, false);
-            led_driver.lock().unwrap().write(display_data);
-            continue;
+            self.state = State::Preparing;
+            self.remaining_time = 25 * 60;
+            let display_data = convert_to_display_data(self.remaining_time, false);
+            context.led.lock().unwrap().write(display_data);
+            return Ok(());
         }
 
-        match context.state {
+        match self.state {
             State::Preparing => {
                 if was_start_stop_button_pressed {
-                    context.state = State::Working;
+                    self.state = State::Working;
                     {
-                        let mut locked = display_driver.lock().unwrap();
+                        let mut locked = context.display.lock().unwrap();
                         locked.clear()?;
                         locked.draw_image(include_bytes!("../asserts/images/pomodoro_working.bmp"), Point::new(0, 0))?;
                         locked.update()?;
@@ -117,50 +127,50 @@ impl AppFramework for PomodoroTimer {
                 }
             },
             State::Working => {
-                do_count_down(&mut context.remaining_time, &sub_frame);
+                do_count_down(&mut self.remaining_time, &sub_frame);
                 if was_start_stop_button_pressed {
-                    context.state = State::WorkingPaused;
+                    self.state = State::WorkingPaused;
                 }
-                if context.remaining_time == 0 {
-                    context.remaining_time = 5 * 60;
-                    context.state = State::Resting;
+                if self.remaining_time == 0 {
+                    self.remaining_time = 5 * 60;
+                    self.state = State::Resting;
                     {
-                        let mut locked = display_driver.lock().unwrap();
+                        let mut locked = context.display.lock().unwrap();
                         locked.clear()?;
                         locked.draw_image(include_bytes!("../asserts/images/pomodoro_resting.bmp"), Point::new(0, 0))?;
                         locked.update()?;
                     }
                 }
-                let display_data = convert_to_display_data(context.remaining_time, with_dot);
-                led_driver.lock().unwrap().write(display_data);
+                let display_data = convert_to_display_data(self.remaining_time, with_dot);
+                context.led.lock().unwrap().write(display_data);
             },
             State::WorkingPaused => {
                 if was_start_stop_button_pressed {
-                    context.state = State::Working;
+                    self.state = State::Working;
                 }
             },
             State::Resting => {
-                do_count_down(&mut context.remaining_time, &sub_frame);
+                do_count_down(&mut self.remaining_time, &sub_frame);
                 if was_start_stop_button_pressed {
-                    context.state = State::RestingPaused;
+                    self.state = State::RestingPaused;
                 }
-                if context.remaining_time == 0 {
-                    context.remaining_time = 25 * 60;
-                    context.state = State::Preparing;
+                if self.remaining_time == 0 {
+                    self.remaining_time = 25 * 60;
+                    self.state = State::Preparing;
                 }
-                let display_data = convert_to_display_data(context.remaining_time, with_dot);
-                led_driver.lock().unwrap().write(display_data);
+                let display_data = convert_to_display_data(self.remaining_time, with_dot);
+                context.led.lock().unwrap().write(display_data);
             },
             State::RestingPaused => {
                 if was_start_stop_button_pressed {
-                    context.state = State::Resting;
+                    self.state = State::Resting;
                 }
             },
         }
+        Ok(())
     }
 
     fn is_finished(&self) -> bool {
-
+        self.finished
     }
 }
-*/

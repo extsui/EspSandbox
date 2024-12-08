@@ -22,7 +22,7 @@ impl AppFramework for ToyPiano {
 
     }
 
-    fn update(&mut self, context: &AppContext) -> anyhow::Result<()> {
+    fn update(&mut self, context: &AppContext, _frame_count: u64) -> anyhow::Result<()> {
         // ボタン情報取得
         let key_status = context.button.lock().unwrap().get_status();
         if key_status == Button::MASK {
