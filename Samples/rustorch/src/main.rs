@@ -29,9 +29,11 @@ mod app_context;
 // TODO:
 //mod app_toy_piano;
 //use app_toy_piano::ToyPiano;
+//mod app_pomodoro_timer;
+//use app_pomodoro_timer::PomodoroTimer;
 
-mod app_pomodoro_timer;
-use app_pomodoro_timer::PomodoroTimer;
+mod app_slot_game;
+use app_slot_game::SlotGame;
 
 use esp_idf_hal::delay::FreeRtos;
 
@@ -134,15 +136,17 @@ fn main() -> anyhow::Result<()> {
     // TODO: 他の Application も追加する
     let mut toy_piano = ToyPiano::new();
     toy_piano.initialize();
-*/
 
     let mut pomodoro_timer = PomodoroTimer::new();
     pomodoro_timer.initialize();
+*/
+    let mut slot_game = SlotGame::new();
+    slot_game.initialize();
 
     loop {
-        pomodoro_timer.update(&context, frame_count)?;
+        slot_game.update(&context, frame_count)?;
 
-        if pomodoro_timer.is_finished() {
+        if slot_game.is_finished() {
             log::info!("Finished!");
             break Ok(());
         }

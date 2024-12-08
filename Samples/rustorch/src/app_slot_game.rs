@@ -1,5 +1,7 @@
-/*
-use app_context;
+use crate::app_context::AppContext;
+use crate::app_context::AppFramework;
+
+use crate::Button;
 
 enum State {
     // [---] 起動状態
@@ -13,13 +15,15 @@ enum State {
 pub struct SlotGame {
     finished: bool,
 
-    pub state: State,
+    state: State,
     // 何桁目まで確定したか
-    pub fixed_digit_count: u8,
+    fixed_digit_count: u8,
     // 各桁の数字の内部カウンタ、7セグの回転表示に使用
-    pub internal_number: [u32; 3],
+    internal_number: [u32; 3],
     // 確定された数字の格納先
-    pub fixed_number: [u8; 3],
+    fixed_number: [u8; 3],
+
+    animation_delay_param: u32
 }
 
 impl SlotGame {
@@ -30,6 +34,7 @@ impl SlotGame {
             fixed_digit_count: 0,
             internal_number: Default::default(),
             fixed_number: Default::default(),
+            animation_delay_param: 5,   // TORIAEZU: 初期値は適当
         }
     }
 }
@@ -39,12 +44,8 @@ impl AppFramework for SlotGame {
 
     }
 
-    fn update(&mut self, context: &AppContext) {
-        let mut animation_delay_param: u32 = 5; // TORIAEZU: 初期値は適当
-    
-        //let adc_value = adc.read(&mut adc_pin)?;
-
-        let released_button = key_matrix.lock().unwrap().was_released(Button::MASK);
+    fn update(&mut self, context: &AppContext, _frame_count: u64) -> anyhow::Result<()> {
+        let released_button = context.button.lock().unwrap().was_released(Button::MASK);
         // スロットマシン制御ボタン
         let was_rolling_started = released_button & Button::A != 0x00;
         let was_number_selected = released_button & Button::B != 0x00;
@@ -78,33 +79,33 @@ impl AppFramework for SlotGame {
             [ 0x10, 0x30, 0x60, 0xE6, 0xF7, 0x00 ],
         ];
 
-        match slot_machine.state {
+        match self.state {
             State::Startup => {
                 if was_rolling_started {
-                    slot_machine.state = State::Rolling;
-                    slot_machine.fixed_digit_count = 0;
-                    slot_machine.fixed_number = Default::default();
-                    slot_machine.internal_number = Default::default();
+                    self.state = State::Rolling;
+                    self.fixed_digit_count = 0;
+                    self.fixed_number = Default::default();
+                    self.internal_number = Default::default();
                     println!("-> Rolling");
                 }
             },
             State::Rolling => {
                 // アニメーションの速度を動的に変更 (主にデバッグ用)
                 if was_button_up_pressed {
-                    if animation_delay_param > 1 {
-                        animation_delay_param -= 1;
+                    if self.animation_delay_param > 1 {
+                        self.animation_delay_param -= 1;
                     }
                 }
                 if was_button_down_pressed {
-                    animation_delay_param += 1;
+                    self.animation_delay_param += 1;
                 }
 
                 // 桁確定判定
                 if was_number_selected {
-                    let index = slot_machine.fixed_digit_count as usize;
+                    let index = self.fixed_digit_count as usize;
                     // TODO: 内部数値から確定数値への変換処理を仕上げる (演出関連)
-                    slot_machine.fixed_number[index] = (slot_machine.internal_number[index] / animation_delay_param / NUMBER_SEGMENT_SLOT_TABLE[0].len() as u32) as u8;
-                    slot_machine.fixed_digit_count += 1;
+                    self.fixed_number[index] = (self.internal_number[index] / self.animation_delay_param / NUMBER_SEGMENT_SLOT_TABLE[0].len() as u32) as u8;
+                    self.fixed_digit_count += 1;
 
                     println!("fixed_digit_count : {} -> {}", index, index + 1);
                 }
@@ -113,9 +114,9 @@ impl AppFramework for SlotGame {
 
                 // 内部数値のカウントアップ処理
                 // TODO: 要パラメータ調整
-                for value in slot_machine.internal_number.iter_mut() {
+                for value in self.internal_number.iter_mut() {
                     *value += 1;
-                    if *value >= animation_delay_param * NUMBER_SEGMENT_TABLE.len() as u32 * NUMBER_SEGMENT_SLOT_TABLE[0].len() as u32 {
+                    if *value >= self.animation_delay_param * NUMBER_SEGMENT_TABLE.len() as u32 * NUMBER_SEGMENT_SLOT_TABLE[0].len() as u32 {
                         *value = 0;
                     }
                 }
@@ -123,34 +124,34 @@ impl AppFramework for SlotGame {
                 // 確定済み桁はその数字を表示、未確定の桁は遷移中のパターンを表示
                 let mut display_data = [0u8; 4];
                 for i in 0..display_data.len()-1 {
-                    display_data[i] = if i < (slot_machine.fixed_digit_count as usize) {
-                        let number_index = slot_machine.fixed_number[i] as usize;
+                    display_data[i] = if i < (self.fixed_digit_count as usize) {
+                        let number_index = self.fixed_number[i] as usize;
                         NUMBER_SEGMENT_TABLE[number_index]
                     } else {
-                        let number_index    = (slot_machine.internal_number[i] / animation_delay_param / NUMBER_SEGMENT_SLOT_TABLE[0].len() as u32) as usize;
-                        let animation_index = (slot_machine.internal_number[i] / animation_delay_param % NUMBER_SEGMENT_SLOT_TABLE[0].len() as u32) as usize;
+                        let number_index    = (self.internal_number[i] / self.animation_delay_param / NUMBER_SEGMENT_SLOT_TABLE[0].len() as u32) as usize;
+                        let animation_index = (self.internal_number[i] / self.animation_delay_param % NUMBER_SEGMENT_SLOT_TABLE[0].len() as u32) as usize;
                         NUMBER_SEGMENT_SLOT_TABLE[number_index][animation_index]
                     };
                 }
 
-                led_driver.lock().unwrap().write(display_data);
+                context.led.lock().unwrap().write(display_data);
 
-                if slot_machine.fixed_digit_count == 3 {
-                    slot_machine.state = State::Fixed;
+                if self.fixed_digit_count == 3 {
+                    self.state = State::Fixed;
                     println!("-> Fixed");
                 }
             },
             State::Fixed => {
                 // TODO: 結果に対して何かしらのアニメーションさせる?
                 // TORIAEZU: 現状は NOP で遷移
-                slot_machine.state = State::Startup;
+                self.state = State::Startup;
                 println!("-> Startup");
             },
         }
+        Ok(())
     }
 
     fn is_finished(&self) -> bool {
-
+        self.finished
     }
 }
-*/
