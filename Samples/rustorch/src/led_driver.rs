@@ -143,6 +143,10 @@ impl LedDriver {
         *self.display_data.lock().unwrap() = data;
     }
 
+    pub fn clear(&mut self) {
+        self.write([ 0, 0, 0, 0 ]);
+    }
+
     pub fn set_brightness(&mut self, brightness: [u8; 4]) {
         *self.brightness.lock().unwrap() = brightness;
     }

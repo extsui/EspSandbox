@@ -97,7 +97,9 @@ impl AppFramework for ToyPiano {
         Ok(())
     }
 
-    fn finalize(&mut self, _context: &AppContext) -> anyhow::Result<()> {
+    fn finalize(&mut self, context: &AppContext) -> anyhow::Result<()> {
+        context.buzzer.lock().unwrap().stop_tone()?;
+        context.led.lock().unwrap().clear();
         Ok(())
     }
 

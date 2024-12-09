@@ -155,7 +155,8 @@ impl AppFramework for SlotGame {
         Ok(())
     }
 
-    fn finalize(&mut self, _context: &AppContext) -> anyhow::Result<()> {
+    fn finalize(&mut self, context: &AppContext) -> anyhow::Result<()> {
+        context.led.lock().unwrap().clear();
         Ok(())
     }
 
