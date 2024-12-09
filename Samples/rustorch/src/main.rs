@@ -199,7 +199,7 @@ fn main() -> anyhow::Result<()> {
                     }
     
                     let app = &mut apps[selected_index];
-                    app.initialize();
+                    app.initialize(&context)?;
                     menu_state = MenuState::AppRunning;
                     log::info!("[menu] -> AppRunning");
                 }
@@ -207,10 +207,12 @@ fn main() -> anyhow::Result<()> {
             MenuState::AppRunning => {
                 let app = &mut apps[selected_index];
                 app.update(&context, frame_count)?;
-                if app.is_finished() {
-                    menu_state = MenuState::ReturnToMenu;
+
+                if app.is_finished() || context.button.lock().unwrap().is_pressed_all() {
+                    app.finalize(&context)?;
                     draw_menu(&context.display, &app_names, selected_index);
                     return_to_menu_time = frame_count + (60 / 2);   // 0.5秒待ち
+                    menu_state = MenuState::ReturnToMenu;
                     log::info!("[menu] -> ReturnToMenu (current: {}, end: {})", frame_count, return_to_menu_time);
                 }
             },

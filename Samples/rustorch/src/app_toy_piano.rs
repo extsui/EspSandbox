@@ -22,18 +22,14 @@ impl AppFramework for ToyPiano {
         "Toy piano"
     }
 
-    fn initialize(&mut self) {
+    fn initialize(&mut self, _context: &AppContext) -> anyhow::Result<()> {
         self.finished = false;
         self.previous_key_status = 0;
+        Ok(())
     }
 
     fn update(&mut self, context: &AppContext, _frame_count: u64) -> anyhow::Result<()> {
-        // ボタン情報取得
         let key_status = context.button.lock().unwrap().get_status();
-        if key_status == Button::MASK {
-            self.finished = true;
-            return Ok(());
-        }
 
         // 7セグ輝度調整用
         // 理論上は 0V ~ 3.3V (=3300) だが実際は 3.26V あたりでサチるので
@@ -98,6 +94,10 @@ impl AppFramework for ToyPiano {
         context.led.lock().unwrap().write(display_data);
 
         self.previous_key_status = key_status;
+        Ok(())
+    }
+
+    fn finalize(&mut self, _context: &AppContext) -> anyhow::Result<()> {
         Ok(())
     }
 

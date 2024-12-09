@@ -13,19 +13,11 @@ pub struct AppContext {
     pub volume: Arc<Mutex<Volume>>,
 }
 
-/*
-// TODO:
-
-pub struct AppMetadata {
-    pub name: String,
-    pub icon: Option<[u8; 128 * 64]>,   // TODO:
-}
-*/
-
 pub trait AppFramework {
     fn get_name(&self) -> &str;
-    fn initialize(&mut self);
+    fn initialize(&mut self, context: &AppContext) -> anyhow::Result<()>;
     fn update(&mut self, context: &AppContext, frame_count: u64) -> anyhow::Result<()>;
+    fn finalize(&mut self, context: &AppContext) -> anyhow::Result<()>;
     fn is_finished(&self) -> bool;
 }
 

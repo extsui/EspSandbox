@@ -67,19 +67,14 @@ impl AppFramework for PomodoroTimer {
         "Pomodoro timer"
     }
 
-    fn initialize(&mut self) {
+    fn initialize(&mut self, _context: &AppContext) -> anyhow::Result<()> {
         self.remaining_time = 25 * 60;
         self.state = State::Preparing;
         self.finished = false;
+        Ok(())
     }
 
     fn update(&mut self, context: &AppContext, frame_count: u64) -> anyhow::Result<()> {
-        let key_status = context.button.lock().unwrap().get_status();
-        if key_status == Button::MASK {
-            self.finished = true;
-            return Ok(());
-        }
-
         let released_button = context.button.lock().unwrap().was_released(Button::MASK);
         let was_start_stop_button_pressed = released_button & Button::A != 0x00;
         let was_reset_button_pressed      = released_button & Button::B != 0x00;
@@ -173,6 +168,10 @@ impl AppFramework for PomodoroTimer {
                 }
             },
         }
+        Ok(())
+    }
+
+    fn finalize(&mut self, _context: &AppContext) -> anyhow::Result<()> {
         Ok(())
     }
 

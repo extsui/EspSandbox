@@ -135,6 +135,10 @@ impl KeyMatrix {
         self.status.lock().unwrap()[0]
     }
 
+    pub fn is_pressed_all(&self) -> bool {
+        self.get_status() == Button::MASK
+    }
+
     // ボタンが押されて離されていたら true
     // 指定したボタンの情報は一度読み出すとクリアされる
     pub fn was_released(&self, button_mask: u8) -> u8 {
