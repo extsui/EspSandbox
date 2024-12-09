@@ -68,7 +68,9 @@ impl AppFramework for PomodoroTimer {
     }
 
     fn initialize(&mut self) {
-
+        self.remaining_time = 25 * 60;
+        self.state = State::Preparing;
+        self.finished = false;
     }
 
     fn update(&mut self, context: &AppContext, frame_count: u64) -> anyhow::Result<()> {

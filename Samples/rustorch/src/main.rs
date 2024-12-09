@@ -148,7 +148,13 @@ fn main() -> anyhow::Result<()> {
     // 選択中のアプリケーション
     let mut selected_index = 0 as usize;
     
-    let mut is_app_running = false;
+    enum MenuState {
+        Selection,      // メニュー選択
+        AppRunning,     // アプリ実行中
+        ReturnToMenu,   // メニューへの遷移中 (キー入力無効状態)
+    }
+
+    let mut menu_state = MenuState::Selection;
 
     /*
     // TODO: なんかうまくいかん...
@@ -169,40 +175,53 @@ fn main() -> anyhow::Result<()> {
     let mut next_frame_time_us = unsafe { esp_idf_sys::esp_timer_get_time() } + MICRO_SECONDS_PER_FRAME;
     let mut frame_count = 0u64;
 
-    loop {
-        if !is_app_running {
-            // メニュー画面
-            let button = context.button.lock().unwrap().was_released(Button::MASK);
-            let is_up_event = button & Button::UP != 0;
-            let is_down_event = button & Button::DOWN != 0;
-            let is_run_event = button & Button::A != 0;
-            if is_up_event {
-                selected_index = (selected_index + apps.len() - 1) % apps.len();
-                draw_menu(&context.display, &app_names, selected_index);
-            }
-            if is_down_event {
-                selected_index = (selected_index + 1) % apps.len();
-                draw_menu(&context.display, &app_names, selected_index);
-            }
-            if is_run_event {
-                // 共通処理
-                let mut locked = context.display.lock().unwrap();
-                {
-                    locked.clear().unwrap();
-                    locked.update().unwrap();
-                }
+    let mut return_to_menu_time = 0u64;
 
+    loop {
+        match menu_state {
+            MenuState::Selection => {
+                let button = context.button.lock().unwrap().was_released(Button::MASK);
+                let is_up_event = button & Button::UP != 0;
+                let is_down_event = button & Button::DOWN != 0;
+                let is_run_event = button & Button::A != 0;
+                if is_up_event || is_down_event {
+                    let direction= if is_down_event { 1 } else { apps.len() - 1 };
+                    selected_index = (selected_index + direction) % apps.len();
+                    draw_menu(&context.display, &app_names, selected_index);
+                    log::info!("[menu] Selection index: -> {}", selected_index);
+                }
+                if is_run_event {
+                    // 共通処理
+                    let mut locked = context.display.lock().unwrap();
+                    {
+                        locked.clear().unwrap();
+                        locked.update().unwrap();
+                    }
+    
+                    let app = &mut apps[selected_index];
+                    app.initialize();
+                    menu_state = MenuState::AppRunning;
+                    log::info!("[menu] -> AppRunning");
+                }
+            },
+            MenuState::AppRunning => {
                 let app = &mut apps[selected_index];
-                app.initialize();
-                is_app_running = true;
-            }
-        } else {
-            // アプリ画面
-            let app = &mut apps[selected_index];
-            app.update(&context, frame_count)?;
-            if app.is_finished() {
-                is_app_running = false;
-            }
+                app.update(&context, frame_count)?;
+                if app.is_finished() {
+                    menu_state = MenuState::ReturnToMenu;
+                    draw_menu(&context.display, &app_names, selected_index);
+                    return_to_menu_time = frame_count + (60 / 2);   // 0.5秒待ち
+                    log::info!("[menu] -> ReturnToMenu (current: {}, end: {})", frame_count, return_to_menu_time);
+                }
+            },
+            MenuState::ReturnToMenu => {
+                // 入力の読み捨て
+                let _ = context.button.lock().unwrap().was_released(0);
+                if frame_count >= return_to_menu_time {
+                    menu_state = MenuState::Selection;
+                    log::info!("[menu] -> Selection (current: {})", frame_count);
+                }
+            },
         }
 
         // TODO: 誤差が蓄積しないカウント方法にするべき

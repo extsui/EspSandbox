@@ -23,7 +23,8 @@ impl AppFramework for ToyPiano {
     }
 
     fn initialize(&mut self) {
-
+        self.finished = false;
+        self.previous_key_status = 0;
     }
 
     fn update(&mut self, context: &AppContext, _frame_count: u64) -> anyhow::Result<()> {

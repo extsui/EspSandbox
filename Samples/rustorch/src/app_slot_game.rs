@@ -49,6 +49,12 @@ impl AppFramework for SlotGame {
     }
 
     fn update(&mut self, context: &AppContext, _frame_count: u64) -> anyhow::Result<()> {
+        let key_status = context.button.lock().unwrap().get_status();
+        if key_status == Button::MASK {
+            self.finished = true;
+            return Ok(());
+        }
+
         let released_button = context.button.lock().unwrap().was_released(Button::MASK);
         // スロットマシン制御ボタン
         let was_rolling_started = released_button & Button::A != 0x00;
