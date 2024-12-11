@@ -180,6 +180,13 @@ fn main() -> anyhow::Result<()> {
     loop {
         match menu_state {
             MenuState::Selection => {
+                let adc_value = context.volume.lock().unwrap().read_raw();
+                let percent = Volume::to_percent(adc_value) as u8;
+
+                let format = format!("{:3}.{:1}", (frame_count / 60) % 1000, frame_count / 6 % 10);
+                context.led.lock().unwrap().write_format(&format);
+                context.led.lock().unwrap().set_brightness([ percent, percent, percent, percent ]);
+
                 let button = context.button.lock().unwrap().was_released(Button::MASK);
                 let is_up_event = button & Button::UP != 0;
                 let is_down_event = button & Button::DOWN != 0;
