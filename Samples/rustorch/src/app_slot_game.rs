@@ -138,7 +138,7 @@ impl AppFramework for SlotGame {
                     };
                 }
 
-                context.led.lock().unwrap().write(display_data);
+                context.led.lock().unwrap().write_data(display_data);
 
                 if self.fixed_digit_count == 3 {
                     self.state = State::Fixed;

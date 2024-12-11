@@ -103,7 +103,7 @@ impl AppFramework for PomodoroTimer {
                 self.remaining_time -= 10;
             }
             let display_data = convert_to_display_data(self.remaining_time, false);
-            context.led.lock().unwrap().write(display_data);
+            context.led.lock().unwrap().write_data(display_data);
         }
 
         // 強制リセット
@@ -111,7 +111,7 @@ impl AppFramework for PomodoroTimer {
             self.state = State::Preparing;
             self.remaining_time = 25 * 60;
             let display_data = convert_to_display_data(self.remaining_time, false);
-            context.led.lock().unwrap().write(display_data);
+            context.led.lock().unwrap().write_data(display_data);
             return Ok(());
         }
 
@@ -143,7 +143,7 @@ impl AppFramework for PomodoroTimer {
                     }
                 }
                 let display_data = convert_to_display_data(self.remaining_time, with_dot);
-                context.led.lock().unwrap().write(display_data);
+                context.led.lock().unwrap().write_data(display_data);
             },
             State::WorkingPaused => {
                 if was_start_stop_button_pressed {
@@ -160,7 +160,7 @@ impl AppFramework for PomodoroTimer {
                     self.state = State::Preparing;
                 }
                 let display_data = convert_to_display_data(self.remaining_time, with_dot);
-                context.led.lock().unwrap().write(display_data);
+                context.led.lock().unwrap().write_data(display_data);
             },
             State::RestingPaused => {
                 if was_start_stop_button_pressed {

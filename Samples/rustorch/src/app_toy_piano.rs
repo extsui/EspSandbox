@@ -91,7 +91,7 @@ impl AppFramework for ToyPiano {
         else if raw_value < 100  { display_data[0..2].fill(0); }
         else if raw_value < 1000 { display_data[0..1].fill(0); }
 
-        context.led.lock().unwrap().write(display_data);
+        context.led.lock().unwrap().write_data(display_data);
 
         self.previous_key_status = key_status;
         Ok(())

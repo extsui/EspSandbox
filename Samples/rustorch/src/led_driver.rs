@@ -12,6 +12,19 @@ use esp_idf_hal::timer::*;
 use esp_idf_hal::task::notification::Notification;
 use std::num::NonZeroU32;
 
+const NUMBER_SEGMENT_TABLE: [u8; 10] = [
+    0xFC,   // 0
+    0x60,   // 1
+    0xDA,   // 2
+    0xF2,   // 3
+    0x66,   // 4
+    0xB6,   // 5
+    0xBE,   // 6
+    0xE4,   // 7
+    0xFE,   // 8
+    0xF6,   // 9
+];
+
 pub struct LedPins {
     pub seg_a: AnyOutputPin,
     pub seg_b: AnyOutputPin,
@@ -139,12 +152,51 @@ impl LedDriver {
         Ok(())
     }
 
-    pub fn write(&mut self, data: [u8; 4]) {
+    pub fn write_data(&mut self, data: [u8; 4]) {
         *self.display_data.lock().unwrap() = data;
     }
 
+    fn parse(format: &String) -> Option<[u8; 4]> {
+        let mut result: [u8; 4] = [ 0, 0, 0, 0 ];
+        let mut index = 0 as usize;
+    
+        let mut ch_prev: Option<char> = None;
+        for ch in format.chars() {
+            match ch {
+                '0'..='9' => {
+                    let number = (ch as u8 - b'0') as usize;
+                    result[index] = NUMBER_SEGMENT_TABLE[number];
+                    index += 1;
+                },
+                ' ' => {
+                    index += 1;
+                },
+                '.' => {
+                    // 先頭の '.' と連続の '.' は NG
+                    if (ch_prev == None) ||
+                       (ch_prev.unwrap() == '.') {
+                        return None
+                    } else {
+                        result[index - 1] |= 0x01;
+                    }
+                },
+                _ => {
+                    return None
+                },
+            }
+            ch_prev = Some(ch);
+        }
+        Some(result)
+    }
+    
+    pub fn write_format(&mut self, format: &String) {
+        let data = Self::parse(format);
+        debug_assert!(data != None, "LedDriver format error!");
+        self.write_data(data.unwrap());
+    }
+
     pub fn clear(&mut self) {
-        self.write([ 0, 0, 0, 0 ]);
+        self.write_data([ 0, 0, 0, 0 ]);
     }
 
     pub fn set_brightness(&mut self, brightness: [u8; 4]) {
