@@ -35,31 +35,15 @@ impl PomodoroTimer {
     }
 }
 
-const NUMBER_SEGMENT_TABLE: [u8; 10] = [
-    0xFC,   // 0
-    0x60,   // 1
-    0xDA,   // 2
-    0xF2,   // 3
-    0x66,   // 4
-    0xB6,   // 5
-    0xBE,   // 6
-    0xE4,   // 7
-    0xFE,   // 8
-    0xF6,   // 9
-];
-
-fn convert_to_display_data(time: u32, with_dot: bool) -> [u8; 4] {
+fn convert_to_display_format(time: u32, with_dot: bool) -> String {
     let minutes: u32 = time / 60;
     let seconds: u32 = time % 60;
-    [
-        // 1桁目は10分未満になったら消灯
-        if minutes / 10 == 0 { 0x00 } else { NUMBER_SEGMENT_TABLE[(minutes / 10) as usize] },
-        // 2桁目のドットは動作中表現用
-        NUMBER_SEGMENT_TABLE[(minutes % 10) as usize] | if with_dot { 0x01 } else { 0x00 },
-        // 秒以降はそのまま
-        NUMBER_SEGMENT_TABLE[(seconds / 10) as usize],
-        NUMBER_SEGMENT_TABLE[(seconds % 10) as usize],
-    ]
+    // 2桁目のドットは動作中表現用
+    if with_dot {
+        return format!("{:2}.{:02}", minutes, seconds);
+    } else {
+        return format!("{:2}{:02}", minutes, seconds);
+    }
 }
 
 impl AppFramework for PomodoroTimer {
@@ -102,16 +86,16 @@ impl AppFramework for PomodoroTimer {
             } else if self.remaining_time > 10 {
                 self.remaining_time -= 10;
             }
-            let display_data = convert_to_display_data(self.remaining_time, false);
-            context.led.lock().unwrap().write_data(display_data);
+            let display_format = convert_to_display_format(self.remaining_time, false);
+            context.led.lock().unwrap().write_format(&display_format);
         }
 
         // 強制リセット
         if was_reset_button_pressed {
             self.state = State::Preparing;
             self.remaining_time = 25 * 60;
-            let display_data = convert_to_display_data(self.remaining_time, false);
-            context.led.lock().unwrap().write_data(display_data);
+            let display_format = convert_to_display_format(self.remaining_time, false);
+            context.led.lock().unwrap().write_format(&display_format);
             return Ok(());
         }
 
@@ -142,8 +126,8 @@ impl AppFramework for PomodoroTimer {
                         locked.update()?;
                     }
                 }
-                let display_data = convert_to_display_data(self.remaining_time, with_dot);
-                context.led.lock().unwrap().write_data(display_data);
+                let display_format = convert_to_display_format(self.remaining_time, with_dot);
+                context.led.lock().unwrap().write_format(&display_format);
             },
             State::WorkingPaused => {
                 if was_start_stop_button_pressed {
@@ -159,8 +143,8 @@ impl AppFramework for PomodoroTimer {
                     self.remaining_time = 25 * 60;
                     self.state = State::Preparing;
                 }
-                let display_data = convert_to_display_data(self.remaining_time, with_dot);
-                context.led.lock().unwrap().write_data(display_data);
+                let display_format = convert_to_display_format(self.remaining_time, with_dot);
+                context.led.lock().unwrap().write_format(&display_format);
             },
             State::RestingPaused => {
                 if was_start_stop_button_pressed {

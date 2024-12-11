@@ -69,29 +69,8 @@ impl AppFramework for ToyPiano {
             }
         }
 
-        const NUMBER_SEGMENT_TABLE: [u8; 10] = [
-            0xFC,   // 0
-            0x60,   // 1
-            0xDA,   // 2
-            0xF2,   // 3
-            0x66,   // 4
-            0xB6,   // 5
-            0xBE,   // 6
-            0xE4,   // 7
-            0xFE,   // 8
-            0xF6,   // 9
-        ];
-        let mut display_data = [
-            NUMBER_SEGMENT_TABLE[(raw_value / 1000 % 10) as usize],
-            NUMBER_SEGMENT_TABLE[(raw_value / 100  % 10) as usize],
-            NUMBER_SEGMENT_TABLE[(raw_value / 10   % 10) as usize],
-            NUMBER_SEGMENT_TABLE[(raw_value / 1    % 10) as usize],
-        ];
-        if      raw_value < 10   { display_data[0..3].fill(0); }
-        else if raw_value < 100  { display_data[0..2].fill(0); }
-        else if raw_value < 1000 { display_data[0..1].fill(0); }
-
-        context.led.lock().unwrap().write_data(display_data);
+        let format = format!("{:4}", raw_value);
+        context.led.lock().unwrap().write_format(&format);
 
         self.previous_key_status = key_status;
         Ok(())
