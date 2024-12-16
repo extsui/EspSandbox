@@ -171,7 +171,9 @@ fn main() -> anyhow::Result<()> {
     draw_menu(&context.display, &app_names, selected_index);
 
     // フレームの概念を導入する
-    const MICRO_SECONDS_PER_FRAME : i64 = 16667;
+    const MICRO_SECONDS_PER_FRAME: i64 = 16667;
+    const MICRO_SECONDS_PER_SECONDS_FRAME_TIME_ADJUSTMENT: i64 = 1000 * 1000 - MICRO_SECONDS_PER_FRAME * 59;   // 誤差調整用
+
     let mut next_frame_time_us = unsafe { esp_idf_sys::esp_timer_get_time() } + MICRO_SECONDS_PER_FRAME;
     let mut frame_count = 0u64;
 
@@ -233,13 +235,16 @@ fn main() -> anyhow::Result<()> {
             },
         }
 
-        // TODO: 誤差が蓄積しないカウント方法にするべき
-
         // 次のフレームまで待つ
         loop {
             let current_time_us = unsafe { esp_idf_sys::esp_timer_get_time() };
             if current_time_us >= next_frame_time_us {
-                next_frame_time_us += MICRO_SECONDS_PER_FRAME;
+                if frame_count % 60 == 0 {
+                    // 1 秒に 1 回蓄積の誤差をリセットするフレームを入れる
+                    next_frame_time_us += MICRO_SECONDS_PER_SECONDS_FRAME_TIME_ADJUSTMENT;
+                } else {
+                    next_frame_time_us += MICRO_SECONDS_PER_FRAME;
+                }
                 break;
             }
             // WDT クリアのために必要
