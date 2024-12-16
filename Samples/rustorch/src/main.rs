@@ -201,8 +201,8 @@ fn main() -> anyhow::Result<()> {
                 }
                 if is_run_event {
                     // 共通処理
-                    let mut locked = context.display.lock().unwrap();
                     {
+                        let mut locked = context.display.lock().unwrap();
                         locked.clear().unwrap();
                         locked.update().unwrap();
                     }

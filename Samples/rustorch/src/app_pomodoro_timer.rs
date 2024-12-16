@@ -51,10 +51,18 @@ impl AppFramework for PomodoroTimer {
         "Pomodoro timer"
     }
 
-    fn initialize(&mut self, _context: &AppContext) -> anyhow::Result<()> {
+    fn initialize(&mut self, context: &AppContext) -> anyhow::Result<()> {
         self.remaining_time = 25 * 60;
         self.state = State::Preparing;
         self.finished = false;
+
+        context.led.lock().unwrap().write_format(&"25.00".to_string());
+        {
+            let mut locked = context.display.lock().unwrap();
+            locked.clear()?;
+            locked.draw_image(include_bytes!("../asserts/images/pomodoro_startup.bmp"), Point::new(0, 0))?;
+            locked.update()?;
+        }
         Ok(())
     }
 
